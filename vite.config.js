@@ -43,6 +43,18 @@ export default defineConfig({
               src: "./assets/sounds/**",
               dest: "static/sounds",
             },
+            {
+              src: "./assets/js/raphael.min.js",
+              dest: "static/assets",
+            },
+            {
+              src: "./assets/js/jquery.mapael.js",
+              dest: "static/assets",
+            },
+            {
+              src: "./assets/js/usa_states.js",
+              dest: "static/assets",
+            },
           ],
           hook: "writeBundle",
         }),
@@ -58,6 +70,7 @@ export default defineConfig({
         setup: resolve(__dirname, "assets/js/setup.js"),
         settings: resolve(__dirname, "assets/js/settings.js"),
         challenges: resolve(__dirname, "assets/js/challenges.js"),
+        challenges_map: resolve(__dirname, "assets/js/challenges-map.js"),
         scoreboard: resolve(__dirname, "assets/js/scoreboard.js"),
         notifications: resolve(__dirname, "assets/js/notifications.js"),
         teams_public: resolve(__dirname, "assets/js/teams/public.js"),

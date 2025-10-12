@@ -17,7 +17,7 @@
     </div>
 
     <div 
-      x-data="ChallengeBoard" 
+      x-data="ChallengeMap" 
       @load-challenges.window="loadChallenges()" 
       @load-challenge.window="loadChallenge($event.detail)"
     >
@@ -35,41 +35,19 @@
       </div>
 
       <div x-show="loaded">
-        <template x-for="(category, idx) in getCategories()" :key="idx">
-          <div class="pt-5">
-            <div class="category-header mb-3">
-              <h3 x-text="category"></h3>
-            </div>
-
-            <div class="category-challenges d-flex flex-column">
-              <div class="challenges-row row">
-                <template x-for="(c, idx) in getChallenges(category)" :key="c.id">
-                  <div class="col-sm-6 col-md-4 col-lg-3 my-3">
-                    <button
-                        class="challenge-button btn btn-dark w-100 h-100"
-                        :class="[
-                          c.solved_by_me ? 'challenge-solved' : '',
-                          ...c.tags.map((tag) => `tag-${tag.value.replace(/ /g, '-')}`),
-                        ];"
-                        :value="c.id" @click="loadChallenge(c.id)"
-                    >
-
-                      <div class="challenge-inner my-3">
-                        <p x-text="c.name"></p>
-                        <span x-text="c.value"></span>
-                      </div>
-                    </button>
-                  </div>
-                </template>
-              </div>
-            </div>
+        <div class="row">
+          <div class="col-md-10">
+            <div x-ref="mapContainer" id="challenges-board" class="map-container"></div>
           </div>
-        </template>
+          <div class="col-md-2">
+            <div class="areaLegend"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 {% endblock %}
 
 {% block scripts %}
-  {{ Assets.js("assets/js/challenges.js") }}
+  {{ Assets.js("assets/js/challenges-map.js") }}
 {% endblock %}

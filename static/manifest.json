@@ -37,6 +37,14 @@
       "assets/js/index.js"
     ]
   },
+  "assets/js/challenges-map.js": {
+    "file": "assets/challenges_map.26252410.js",
+    "src": "assets/js/challenges-map.js",
+    "isEntry": true,
+    "imports": [
+      "assets/js/index.js"
+    ]
+  },
   "assets/js/scoreboard.js": {
     "file": "assets/scoreboard.53fd757c.js",
     "src": "assets/js/scoreboard.js",
@@ -144,7 +152,7 @@
     ]
   },
   "assets/scss/main.scss": {
-    "file": "assets/main.e9ec7884.css",
+    "file": "assets/main.db118fd8.css",
     "src": "assets/scss/main.scss",
     "isEntry": true
   }

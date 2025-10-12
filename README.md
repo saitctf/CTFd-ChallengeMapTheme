@@ -1,54 +1,170 @@
-# core-beta
+# CTFd Challenge Map Theme
 
-> This repository was a temporary repository for development of a new version of the core theme. It has now been merged into the main CTFd repo (https://github.com/CTFd/CTFd/tree/master/CTFd/themes/core). Any further changes should be directed to the main CTFd repo. If you are looking for a repository containing just the theme files see https://github.com/CTFd/core-theme.
+A modern CTFd theme based on core-beta that displays challenges on an interactive United States map. Each challenge is represented by a state, and clicking on a state opens the challenge modal.
 
-Rewritten version of the CTFd core theme to use Bootstrap 5, Alpine.js, and vite to improve upon the existing CTFd theme structure. 
+## Features
 
-## Subtree Installation
+- ✅ **Modern Architecture**: Built on CTFd core-beta with Bootstrap 5, Alpine.js, and Vite
+- ✅ **Interactive US Map**: Challenges mapped to US states with color-coded categories
+- ✅ **Responsive Design**: Works on desktop and mobile devices
+- ✅ **Real-time Updates**: Live challenge solve tracking and updates
+- ✅ **Category Legend**: Visual legend showing challenge categories
+- ✅ **Tooltips**: Hover over states to see challenge information
+- ✅ **Compatible**: Works with CTFd 3.8.0+
 
-### Add repo to themes folder
+## Installation
 
-```
-git subtree add --prefix CTFd/themes/core-beta git@github.com:CTFd/core-beta.git main --squash
-```
+### Prerequisites
 
-### Pull latest changes to subtree
-```
-git subtree pull --prefix CTFd/themes/core-beta git@github.com:CTFd/core-beta.git main --squash
-```
+- CTFd 3.8.0 or later
+- Node.js and Yarn (for building the theme)
 
-### Subtree Gotcha
+### Setup
 
-Make sure to use Merge Commits when dealing with the subtree here. For some reason Github's squash and commit uses the wrong line ending which causes issues with the subtree script: https://stackoverflow.com/a/47190256. 
-
-## Creating Custom Theme (based on core-beta)
-
-To create a custom theme based on the core-beta one, here are the steps to follow:
-
-1. Clone core-beta theme locally to a seperate folder
+1. **Clone or copy this theme** to your CTFd instance's `themes` directory
+2. **Install dependencies**:
+   ```bash
+   cd CTFd-ChallengeMapTheme
+   yarn install
    ```
-   git clone https://github.com/CTFd/core-beta.git custom-theme
+3. **Build the theme**:
+   ```bash
+   yarn build
    ```
-   To clarify the structure of the project, the `./assets` folder contains the uncompiled source files (the ones you can modify), while the `./static` directory contains the compiled ones. 
+4. **Copy the theme folder** to your CTFd instance's `themes` directory
+5. **Select the theme** in CTFd Admin Panel → Configuration → Themes
+6. **Restart CTFd**
 
-2. Install [Yarn](https://classic.yarnpkg.com/en/) following the [official installation guides](https://classic.yarnpkg.com/en/docs/install).
-   * **Yarn** is a dependency management tool used to install and manage project packages
-   * **[Vite](https://vite.dev/guide/)** handles the frontend tooling in CTFd by building optimized assets that are served through Flask.
+### Development
 
-4. Run `yarn install` in the root of `custom-theme` folder to install the necessary Node packages including `vite`.
+For development with hot reloading:
 
-5. Run the appropriate yarn build mode:
-   - Run `yarn dev` (this will run `vite build --watch`) while developing the theme.
-   - Run `yarn build` (which will run `vite build`) for a one-time build. 
-   Vite allows you to preview changes instantly with hot reloading.
+```bash
+yarn dev
+```
 
+This will watch for changes and rebuild automatically.
 
-6. Now, you can start your modifications in the `assets` folder. Each time you save, Vite will automatically recompile everything (assuming you are using `yarn dev`), and you can directly see the result by importing your compiled theme into a CTFd instance.
-   Note: You do not need the `node_modules` folder, you can simply zip the theme directory without it.
+## How It Works
 
-7. When you are ready you can use `yarn build` to build the production copy of your theme.
+### Challenge Mapping
 
-## Todo
+Challenges are automatically mapped to US states using the following logic:
 
-- Document how we are using Vite
-- Create a cookie cutter template package to use with Vite
+1. **State Tags**: If a challenge has a state tag (e.g., "CA", "NY", "TX"), it will be placed on that state
+2. **Default Assignment**: If no state tag is provided, challenges are assigned to states in order
+3. **Category Colors**: Each challenge category gets a unique color for easy identification
+
+### State Codes
+
+The theme uses standard US state abbreviations:
+- CA (California), NY (New York), TX (Texas), FL (Florida), etc.
+- All 50 states plus DC are supported
+
+### Interactive Features
+
+- **Click States**: Click on any state to open the challenge modal
+- **Hover Tooltips**: Hover over states to see challenge details
+- **Category Legend**: Right sidebar shows all challenge categories with colors
+- **Real-time Updates**: Map updates automatically when challenges are solved
+
+## File Structure
+
+```
+CTFd-ChallengeMapTheme/
+├── assets/
+│   ├── js/
+│   │   ├── challenges-map.js    # Main map functionality (Alpine.js)
+│   │   ├── raphael.min.js       # SVG library
+│   │   ├── jquery.mapael.js     # Map rendering library
+│   │   └── usa_states.js        # US states data
+│   └── scss/
+│       └── main.scss            # Styles including map styles
+├── templates/
+│   └── challenges.html          # Challenges page template
+├── static/                      # Built assets (generated)
+├── package.json                 # Dependencies
+├── vite.config.js              # Build configuration
+└── README.md                   # This file
+```
+
+## Customization
+
+### Challenge Categories
+
+Categories are automatically detected from your challenges. Each category gets a unique color generated from the category name.
+
+### Map Styling
+
+Edit `assets/scss/main.scss` to customize map appearance:
+
+```scss
+.map-container {
+  height: 600px;  // Adjust map height
+  border-radius: 8px;  // Adjust border radius
+}
+
+.mapael .mapTooltip {
+  // Customize tooltip appearance
+}
+```
+
+### State Assignment
+
+To assign challenges to specific states, add state tags to your challenges:
+- Tag: "CA" → Challenge appears on California
+- Tag: "NY" → Challenge appears on New York
+- Tag: "TX" → Challenge appears on Texas
+
+## Technical Details
+
+### Architecture
+
+- **Base**: CTFd core-beta theme
+- **Frontend**: Alpine.js for reactivity
+- **Styling**: Bootstrap 5 + SCSS
+- **Build**: Vite for fast builds and hot reloading
+- **Map**: Raphael.js + jQuery Mapael for SVG rendering
+
+### API Integration
+
+The theme uses CTFd's modern API endpoints:
+- `/api/v1/challenges` - Fetch challenges
+- `/api/v1/challenges/{id}` - Load specific challenge
+- `/api/v1/challenges/{id}/attempts` - Submit challenge solutions
+
+### Browser Support
+
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
+
+## Troubleshooting
+
+### Map Not Displaying
+
+1. Check browser console for JavaScript errors
+2. Verify all map libraries are loaded
+3. Ensure challenges exist in your CTFd instance
+4. Check that the theme is properly built (`yarn build`)
+
+### Challenges Not Loading
+
+1. Verify CTFd API endpoints are accessible
+2. Check network tab in browser dev tools
+3. Ensure you're logged in to CTFd
+
+### Build Issues
+
+1. Make sure Node.js and Yarn are installed
+2. Run `yarn install` to install dependencies
+3. Check for any error messages during `yarn build`
+
+## Contributing
+
+This theme is based on the [CTFd core-beta theme](https://github.com/CTFd/core-theme) and integrates functionality from the [UnitedStates theme](https://github.com/ColdHeat/UnitedStates).
+
+## License
+
+This theme is released under the same license as CTFd (Apache-2.0).
