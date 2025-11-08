@@ -52,7 +52,7 @@ export default defineConfig({
               dest: "static/assets",
             },
             {
-              src: "./assets/js/usa_states.js",
+              src: "./assets/js/canada_provinces.js",
               dest: "static/assets",
             },
           ],

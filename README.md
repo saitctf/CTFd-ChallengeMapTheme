@@ -1,15 +1,15 @@
 # CTFd Challenge Map Theme
 
-A modern CTFd theme based on core-beta that displays challenges on an interactive United States map. Each challenge is represented by a state, and clicking on a state opens the challenge modal.
+A modern CTFd theme based on core-beta that displays challenges on an interactive Canada map. Each challenge category is represented by a province or territory, and clicking on a province/territory opens the challenge modal.
 
 ## Features
 
 - ✅ **Modern Architecture**: Built on CTFd core-beta with Bootstrap 5, Alpine.js, and Vite
-- ✅ **Interactive US Map**: Challenges mapped to US states with color-coded categories
+- ✅ **Interactive Canada Map**: Challenges mapped to Canadian provinces and territories with color-coded categories
 - ✅ **Responsive Design**: Works on desktop and mobile devices
 - ✅ **Real-time Updates**: Live challenge solve tracking and updates
 - ✅ **Category Legend**: Visual legend showing challenge categories
-- ✅ **Tooltips**: Hover over states to see challenge information
+- ✅ **Tooltips**: Hover over provinces/territories to see challenge information
 - ✅ **Compatible**: Works with CTFd 3.8.0+
 
 ## Installation
@@ -49,22 +49,23 @@ This will watch for changes and rebuild automatically.
 
 ### Challenge Mapping
 
-Challenges are automatically mapped to US states using the following logic:
+Challenges are automatically mapped to Canadian provinces and territories using the following logic:
 
-1. **State Tags**: If a challenge has a state tag (e.g., "CA", "NY", "TX"), it will be placed on that state
-2. **Default Assignment**: If no state tag is provided, challenges are assigned to states in order
+1. **Category-Based Mapping**: Each challenge category is automatically assigned to a province/territory
+2. **Province Tags**: If a challenge has a province tag (e.g., "BC", "ON", "QC"), it will be placed on that province/territory
 3. **Category Colors**: Each challenge category gets a unique color for easy identification
 
-### State Codes
+### Province/Territory Codes
 
-The theme uses standard US state abbreviations:
-- CA (California), NY (New York), TX (Texas), FL (Florida), etc.
-- All 50 states plus DC are supported
+The theme uses standard Canadian province and territory abbreviations:
+- **Provinces**: AB (Alberta), BC (British Columbia), MB (Manitoba), NB (New Brunswick), NL (Newfoundland and Labrador), NS (Nova Scotia), ON (Ontario), PE (Prince Edward Island), QC (Quebec), SK (Saskatchewan)
+- **Territories**: NT (Northwest Territories), NU (Nunavut), YT (Yukon)
+- All 10 provinces and 3 territories are supported
 
 ### Interactive Features
 
-- **Click States**: Click on any state to open the challenge modal
-- **Hover Tooltips**: Hover over states to see challenge details
+- **Click Provinces/Territories**: Click on any province or territory to open the challenge modal
+- **Hover Tooltips**: Hover over provinces/territories to see challenge details
 - **Category Legend**: Right sidebar shows all challenge categories with colors
 - **Real-time Updates**: Map updates automatically when challenges are solved
 
@@ -77,7 +78,7 @@ CTFd-ChallengeMapTheme/
 │   │   ├── challenges-map.js    # Main map functionality (Alpine.js)
 │   │   ├── raphael.min.js       # SVG library
 │   │   ├── jquery.mapael.js     # Map rendering library
-│   │   └── usa_states.js        # US states data
+│   │   └── canada_provinces.js  # Canada provinces and territories data
 │   └── scss/
 │       └── main.scss            # Styles including map styles
 ├── templates/
@@ -109,12 +110,13 @@ Edit `assets/scss/main.scss` to customize map appearance:
 }
 ```
 
-### State Assignment
+### Province/Territory Assignment
 
-To assign challenges to specific states, add state tags to your challenges:
-- Tag: "CA" → Challenge appears on California
-- Tag: "NY" → Challenge appears on New York
-- Tag: "TX" → Challenge appears on Texas
+To assign challenges to specific provinces/territories, add province tags to your challenges:
+- Tag: "BC" → Challenge appears on British Columbia
+- Tag: "ON" → Challenge appears on Ontario
+- Tag: "QC" → Challenge appears on Quebec
+- Tag: "AB" → Challenge appears on Alberta
 
 ## Technical Details
 
@@ -163,7 +165,7 @@ The theme uses CTFd's modern API endpoints:
 
 ## Contributing
 
-This theme is based on the [CTFd core-beta theme](https://github.com/CTFd/core-theme) and integrates functionality from the [UnitedStates theme](https://github.com/ColdHeat/UnitedStates).
+This theme is based on the [CTFd core-beta theme](https://github.com/CTFd/core-theme) and was inspired by the [UnitedStates theme](https://github.com/ColdHeat/UnitedStates), adapted for Canada.
 
 ## License
 

@@ -17,7 +17,7 @@ function loadMapLibraries() {
     const scripts = [
       '/themes/CTFd-ChallengeMapTheme/static/assets/raphael.min.js',
       '/themes/CTFd-ChallengeMapTheme/static/assets/jquery.mapael.js',
-      '/themes/CTFd-ChallengeMapTheme/static/assets/usa_states.js'
+      '/themes/CTFd-ChallengeMapTheme/static/assets/canada_provinces.js'
     ];
 
     let loaded = 0;
@@ -267,13 +267,13 @@ Alpine.data("Challenge", () => ({
   },
 }));
 
-// US Map functionality
+// Canada Map functionality
 Alpine.data("ChallengeMap", () => ({
   loaded: false,
   challenges: [],
   challenge: null,
-  states: {},
-  states_used: [],
+  provinces: {},
+  provinces_used: [],
   chal_areas: {},
   categories: [],
   category_colors: [],
@@ -298,70 +298,72 @@ Alpine.data("ChallengeMap", () => ({
   },
 
   initializeMap() {
-    // Initialize states mapping
-    this.states = {
-      'DE':1, 'PA':2, 'NJ':3, 'GA':4,
-      'CT':5, 'MA':6, 'MD':7, 'SC':8,
-      'NH':9, 'VA':10, 'NY':11, 'NC':12,
-      'RI':13, 'VT':14, 'KY':15, 'TN':16,
-      'OH':17, 'LA':18, 'IN':19, 'MS':20,
-      'IL':21, 'AL':22, 'ME':23, 'MO':24,
-      'AR':25, 'MI':26, 'FL':27, 'TX':28,
-      'IA':29, 'WI':30, 'CA':31, 'MN':32,
-      'OR':33, 'KS':34, 'WV':35, 'NV':36,
-      'NE':37, 'CO':38, 'ND':39, 'SD':40,
-      'MT':41, 'WA':42, 'ID':43, 'WY':44,
-      'UT':45, 'OK':46, 'NM':47, 'AZ':48,
-      'AK':49, 'HI':50
+    // Initialize provinces mapping (Canada: 10 provinces + 3 territories)
+    this.provinces = {
+      'AB':1, 'BC':2, 'MB':3, 'NB':4,
+      'NL':5, 'NS':6, 'ON':7, 'PE':8,
+      'QC':9, 'SK':10, 'NT':11, 'NU':12,
+      'YT':13
     };
 
-    this.states_used = [];
+    this.provinces_used = [];
     this.chal_areas = {};
     this.categories = [];
     this.category_colors = [];
 
-    this.mapChallengesToStates();
+    this.mapChallengesToProvinces();
     this.createMap();
   },
 
-  mapChallengesToStates() {
-    const state_keys = Object.keys(this.states);
+  mapChallengesToProvinces() {
+    const province_keys = Object.keys(this.provinces);
     const chals_used = [];
 
-    this.challenges.forEach((chal, index) => {
-      // Add category if not already present
+    // Group challenges by category
+    const challengesByCategory = {};
+    this.challenges.forEach(chal => {
       if (!this.categories.includes(chal.category)) {
         this.categories.push(chal.category);
       }
+      if (!challengesByCategory[chal.category]) {
+        challengesByCategory[chal.category] = [];
+      }
+      challengesByCategory[chal.category].push(chal);
+    });
 
-      // Check if challenge has state tags
-      let state_assigned = false;
-      chal.tags.forEach(tag => {
-        if (this.states[tag.value] && !this.states_used.includes(tag.value)) {
-          this.chal_areas[tag.value] = {
-            value: chal.category,
-            tooltip: {content: `<span style="font-weight:bold;">${chal.category} ${parseInt(chal.value)}: ${chal.name}</span>`}
+    // Map each category to a province
+    this.categories.forEach((category, index) => {
+      const province = province_keys[index % province_keys.length];
+      
+      if (!this.provinces_used.includes(province)) {
+        // Get the first challenge in this category
+        const categoryChallenges = challengesByCategory[category];
+        if (categoryChallenges && categoryChallenges.length > 0) {
+          const firstChallenge = categoryChallenges[0];
+          this.chal_areas[province] = {
+            value: category,
+            tooltip: {content: `<span style="font-weight:bold;">${category}</span><br/>${categoryChallenges.length} challenge${categoryChallenges.length > 1 ? 's' : ''}`}
           };
-          this.states_used.push(tag.value);
-          this.states[tag.value] = chal.id;
-          chals_used.push(chal.id);
-          state_assigned = true;
-        }
-      });
-
-      // If no state tag, assign to default state
-      if (!state_assigned) {
-        const default_state = state_keys[index % state_keys.length];
-        if (!this.states_used.includes(default_state)) {
-          this.chal_areas[default_state] = {
-            value: chal.category,
-            tooltip: {content: `<span style="font-weight:bold;">${chal.category} ${parseInt(chal.value)}: ${chal.name}</span>`}
-          };
-          this.states_used.push(default_state);
-          this.states[default_state] = chal.id;
-          chals_used.push(chal.id);
+          this.provinces_used.push(province);
+          // Store the first challenge ID for clicking
+          this.provinces[province] = firstChallenge.id;
         }
       }
+    });
+
+    // Also check for province tags on individual challenges (override category mapping)
+    this.challenges.forEach((chal) => {
+      chal.tags.forEach(tag => {
+        const provinceCode = tag.value.toUpperCase();
+        if (this.provinces.hasOwnProperty(provinceCode) && !this.provinces_used.includes(provinceCode)) {
+          this.chal_areas[provinceCode] = {
+            value: chal.category,
+            tooltip: {content: `<span style="font-weight:bold;">${chal.category} ${parseInt(chal.value)}: ${chal.name}</span>`}
+          };
+          this.provinces_used.push(provinceCode);
+          this.provinces[provinceCode] = chal.id;
+        }
+      });
     });
 
     // Create category colors
@@ -399,7 +401,7 @@ Alpine.data("ChallengeMap", () => ({
       if (mapContainer && window.jQuery && window.jQuery.mapael) {
         $(mapContainer).mapael({
           map: {
-            name: "usa_states",
+            name: "canada_provinces",
             defaultArea: {
               attrs: {
                 fill: "#eee",
@@ -416,8 +418,8 @@ Alpine.data("ChallengeMap", () => ({
               },
               eventHandlers: {
                 click: (e, id, mapElem, textElem) => {
-                  if (!this.states_used.includes(id)) return;
-                  const chalid = this.states[id];
+                  if (!this.provinces_used.includes(id)) return;
+                  const chalid = this.provinces[id];
                   this.loadChallenge(chalid);
                 }
               }
