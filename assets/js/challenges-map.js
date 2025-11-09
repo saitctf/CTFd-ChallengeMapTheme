@@ -593,7 +593,10 @@ Alpine.data("ChallengeMap", () => ({
     tempModal.innerHTML = modalHtml;
     document.body.appendChild(tempModal);
     
-    const selectionModal = new Modal(tempModal);
+    const selectionModal = new Modal(tempModal, {
+      backdrop: true,
+      keyboard: true
+    });
     
     // Store challenge ID to load after modal closes
     let selectedChallengeId = null;
@@ -607,17 +610,39 @@ Alpine.data("ChallengeMap", () => ({
     });
     
     // Clean up and load challenge after modal is hidden
-    tempModal.addEventListener('hidden.bs.modal', () => {
-      // Bootstrap may have already removed the modal, so check first
-      if (document.body.contains(tempModal)) {
-        document.body.removeChild(tempModal);
-      }
-      
+    const handleModalHidden = (event) => {
       // Load the selected challenge if one was chosen
       if (selectedChallengeId) {
-        this.loadChallenge(selectedChallengeId);
+        // Use setTimeout to ensure modal animation is complete
+        setTimeout(() => {
+          this.loadChallenge(selectedChallengeId);
+        }, 150);
       }
-    }, { once: true });
+      
+      // Dispose of the modal instance
+      try {
+        selectionModal.dispose();
+      } catch (e) {
+        // Ignore dispose errors
+      }
+      
+      // Clean up modal element after a delay to ensure Bootstrap is done
+      // Use requestAnimationFrame to ensure DOM updates are complete
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          try {
+            // Check if element still exists and has a parent before removing
+            if (tempModal && tempModal.isConnected && tempModal.parentNode) {
+              tempModal.remove();
+            }
+          } catch (e) {
+            // Element may have already been removed, ignore error silently
+          }
+        });
+      });
+    };
+    
+    tempModal.addEventListener('hidden.bs.modal', handleModalHidden, { once: true });
     
     selectionModal.show();
   },
