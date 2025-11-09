@@ -58,32 +58,32 @@
                         return {x : coords[0], y : coords[1]};
                     },
                     elems : {
-                        // British Columbia (BC) - Western province, mountainous
-                        "BC" : "m 150,250 120,0 40,-25 80,15 60,30 20,45 -15,60 -40,30 -60,15 -80,-8 -60,-38 -20,-45 35,-38 z",
+                        // British Columbia (BC) - Western province, coastal with irregular coastline
+                        "BC" : "m 80,280 60,0 20,-15 40,8 35,18 10,25 -8,32 -20,14 -35,7 -42,-4 -32,-20 -10,-25 18,-20 z",
                         // Alberta (AB) - Rectangular, between BC and SK
-                        "AB" : "m 270,250 120,0 0,90 -120,0 z",
+                        "AB" : "m 140,280 100,0 0,80 -100,0 z",
                         // Saskatchewan (SK) - Rectangular, central
-                        "SK" : "m 390,250 120,0 0,90 -120,0 z",
+                        "SK" : "m 240,280 100,0 0,80 -100,0 z",
                         // Manitoba (MB) - Rectangular, east of SK
-                        "MB" : "m 510,250 100,0 0,90 -100,0 z",
-                        // Ontario (ON) - Large, central-eastern province
-                        "ON" : "m 610,250 140,0 40,30 25,60 -15,75 -40,45 -80,15 -60,-23 -25,-53 15,-75 z",
-                        // Quebec (QC) - Large, eastern province
-                        "QC" : "m 750,250 70,0 15,38 8,60 -8,75 -23,60 -38,23 -15,-45 0,-60 15,-75 z",
-                        // New Brunswick (NB) - Small, eastern
-                        "NB" : "m 820,340 35,0 8,23 -8,30 -25,15 -8,-15 0,-23 z",
-                        // Nova Scotia (NS) - Peninsula, east of NB
-                        "NS" : "m 835,380 25,0 8,15 -8,23 -15,8 -8,-15 0,-15 z",
+                        "MB" : "m 340,280 90,0 0,80 -90,0 z",
+                        // Ontario (ON) - Large, central-eastern province (wider at top, irregular shape)
+                        "ON" : "m 430,280 120,0 30,22 18,50 -8,65 -30,35 -68,10 -50,-18 -18,-43 8,-65 z",
+                        // Quebec (QC) - Large, eastern province (tall, wider at top)
+                        "QC" : "m 550,280 60,0 10,30 5,50 -5,65 -18,50 -30,18 -10,-35 0,-50 10,-65 z",
+                        // New Brunswick (NB) - Small, eastern (rectangular)
+                        "NB" : "m 610,320 28,0 0,22 -28,0 z",
+                        // Nova Scotia (NS) - Peninsula, east of NB (irregular peninsula shape)
+                        "NS" : "m 620,342 18,0 4,10 -4,15 -13,4 -4,-10 0,-10 z",
                         // Prince Edward Island (PE) - Small island, east of NB
-                        "PE" : "m 825,360 12,0 4,8 -4,11 -8,4 -4,-8 0,-8 z",
-                        // Newfoundland and Labrador (NL) - Large, easternmost
-                        "NL" : "m 880,280 35,0 8,38 4,60 -8,45 -15,30 -20,-23 -8,-38 8,-60 0,-53 z",
-                        // Yukon (YT) - Northwest territory
-                        "YT" : "m 100,100 80,0 15,23 8,38 -8,45 -32,23 -40,-15 -23,-38 0,-38 z",
-                        // Northwest Territories (NT) - Large northern territory
-                        "NT" : "m 180,150 160,0 25,30 15,60 -15,75 -40,38 -80,-23 -48,-53 -15,-60 0,-68 z",
-                        // Nunavut (NU) - Largest territory, central-northern
-                        "NU" : "m 340,150 160,0 40,45 25,75 -25,90 -48,53 -80,-30 -48,-60 -25,-75 0,-98 z"
+                        "PE" : "m 615,330 9,0 3,5 -3,7 -6,3 -3,-5 0,-5 z",
+                        // Newfoundland and Labrador (NL) - Large, easternmost (L-shaped, tall)
+                        "NL" : "m 650,260 28,0 5,30 3,50 -5,35 -10,22 -14,-18 -5,-30 5,-50 0,-45 z",
+                        // Yukon (YT) - Northwest territory (rectangular, top-left)
+                        "YT" : "m 60,80 65,0 10,18 5,32 -5,35 -22,18 -28,-10 -16,-32 0,-32 z",
+                        // Northwest Territories (NT) - Large northern territory (wide, irregular)
+                        "NT" : "m 125,120 130,0 18,22 10,50 -10,65 -28,32 -65,-18 -36,-43 -10,-50 0,-58 z",
+                        // Nunavut (NU) - Largest territory, central-northern (very wide, irregular)
+                        "NU" : "m 255,120 130,0 28,35 18,65 -18,80 -35,43 -65,-22 -35,-50 -18,-65 0,-90 z"
                     }
                 };
 

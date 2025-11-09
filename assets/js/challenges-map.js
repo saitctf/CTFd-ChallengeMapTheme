@@ -1,9 +1,8 @@
 import Alpine from "alpinejs";
 import dayjs from "dayjs";
+import { Modal, Tab, Tooltip } from "bootstrap";
 
 import CTFd from "./index";
-
-import { Modal, Tab, Tooltip } from "bootstrap";
 import highlight from "./theme/highlight";
 
 // Load map libraries - scripts are loaded in template, just verify they're ready
@@ -287,6 +286,7 @@ Alpine.data("ChallengeMap", () => ({
   chal_areas: {},
   categories: [],
   category_colors: [],
+  province_challenges: {}, // Store all challenges per province
 
   async init() {
     try {
@@ -328,6 +328,7 @@ Alpine.data("ChallengeMap", () => ({
     this.chal_areas = {};
     this.categories = [];
     this.category_colors = [];
+    this.province_challenges = {};
 
     this.mapChallengesToProvinces();
     this.createMap();
@@ -354,17 +355,19 @@ Alpine.data("ChallengeMap", () => ({
       const province = province_keys[index % province_keys.length];
       
       if (!this.provinces_used.includes(province)) {
-        // Get the first challenge in this category
+        // Get all challenges in this category
         const categoryChallenges = challengesByCategory[category];
         if (categoryChallenges && categoryChallenges.length > 0) {
-          const firstChallenge = categoryChallenges[0];
+          // Store all challenge IDs for this province
+          this.province_challenges[province] = categoryChallenges.map(chal => chal.id);
+          
           this.chal_areas[province] = {
             value: category,
             tooltip: {content: `<span style="font-weight:bold;">${category}</span><br/>${categoryChallenges.length} challenge${categoryChallenges.length > 1 ? 's' : ''}`}
           };
           this.provinces_used.push(province);
-          // Store the first challenge ID for clicking
-          this.provinces[province] = firstChallenge.id;
+          // Store the first challenge ID for backward compatibility
+          this.provinces[province] = categoryChallenges[0].id;
         }
       }
     });
@@ -374,6 +377,15 @@ Alpine.data("ChallengeMap", () => ({
       chal.tags.forEach(tag => {
         const provinceCode = tag.value.toUpperCase();
         if (this.provinces.hasOwnProperty(provinceCode) && !this.provinces_used.includes(provinceCode)) {
+          // Initialize array if it doesn't exist
+          if (!this.province_challenges[provinceCode]) {
+            this.province_challenges[provinceCode] = [];
+          }
+          // Add this challenge to the province
+          if (!this.province_challenges[provinceCode].includes(chal.id)) {
+            this.province_challenges[provinceCode].push(chal.id);
+          }
+          
           this.chal_areas[provinceCode] = {
             value: chal.category,
             tooltip: {content: `<span style="font-weight:bold;">${chal.category} ${parseInt(chal.value)}: ${chal.name}</span>`}
@@ -420,117 +432,188 @@ Alpine.data("ChallengeMap", () => ({
   createMap() {
     // Wait for DOM to be ready and container to be visible
     const self = this;
-    this.$nextTick(() => {
-      // Wait for jQuery to be available (CTFd core loads it)
-      const waitForJQuery = (callback) => {
-        const $ = window.$ || window.jQuery;
-        if ($) {
-          callback($);
-        } else {
-          // Wait a bit and try again
-          setTimeout(() => waitForJQuery(callback), 50);
-        }
-      };
+    
+    // Wait for Alpine to finish rendering and container to be visible
+    const waitForVisible = () => {
+      const mapContainer = self.$refs.mapContainer;
+      if (!mapContainer) {
+        setTimeout(waitForVisible, 50);
+        return;
+      }
       
-      waitForJQuery(($) => {
-        // Use jQuery ready to ensure DOM is fully ready
-        $(function() {
-          // Wait for container to be visible (Alpine.js x-show)
-          const waitForVisible = () => {
-            const mapContainer = self.$refs.mapContainer;
-            if (!mapContainer) {
-              console.error('Map container not found');
-              return;
-            }
-            
-            // Check if container is visible
-            const $container = $(mapContainer);
-            const isVisible = $container.is(':visible') && $container.width() > 0 && $container.height() > 0;
-            
-            if (!isVisible) {
-              // Container is hidden, wait a bit and try again
-              setTimeout(waitForVisible, 100);
-              return;
-            }
-            
-            if (!$.mapael) {
-              console.error('jQuery Mapael not loaded');
-              return;
-            }
-            
-            if (!$.mapael.maps || !$.mapael.maps.canada_provinces) {
-              console.error('Canada provinces map definition not found');
-              console.log('Available maps:', $.mapael.maps ? Object.keys($.mapael.maps) : 'none');
-              return;
-            }
-            
-            try {
-              const mapConfig = {
-                map: {
-                  name: "canada_provinces",
-                  cssClass: "map",
-                  defaultArea: {
-                    attrs: {
-                      fill: "#eee",
-                      stroke: "#ddd",
-                      strokeWidth: 1,
-                      cursor: "pointer"
-                    },
-                    text: {
-                      attrs: {"font-size": 10, "font-family": "Arial, Helvetica, sans-serif"},
-                      attrsHover: {"font-size": 14, "font-family": "Arial, Helvetica, sans-serif"}
-                    },
-                    attrsHover: {
-                      animDuration: 200,
-                      fill: "#555",
-                    },
+      const $ = window.$ || window.jQuery;
+      if (!$) {
+        setTimeout(waitForVisible, 50);
+        return;
+      }
+      
+      const $container = $(mapContainer);
+      const $mapDiv = $container.find('.map');
+      
+      // Check if container and map div are visible
+      const containerVisible = $container.is(':visible') && 
+                               $container.width() > 0 && 
+                               $container.height() > 0 &&
+                               window.getComputedStyle(mapContainer).display !== 'none';
+      
+      const mapDivVisible = $mapDiv.length > 0 && 
+                            $mapDiv.is(':visible') &&
+                            window.getComputedStyle($mapDiv[0]).display !== 'none';
+      
+      if (!containerVisible || !mapDivVisible) {
+        // Container is hidden, wait a bit and try again
+        setTimeout(waitForVisible, 100);
+        return;
+      }
+      
+      if (!$.mapael) {
+        console.error('jQuery Mapael not loaded');
+        return;
+      }
+      
+      if (!$.mapael.maps || !$.mapael.maps.canada_provinces) {
+        console.error('Canada provinces map definition not found');
+        console.log('Available maps:', $.mapael.maps ? Object.keys($.mapael.maps) : 'none');
+        return;
+      }
+      
+      try {
+        const mapConfig = {
+          map: {
+            name: "canada_provinces",
+            cssClass: "map",
+            defaultArea: {
+              attrs: {
+                fill: "#eee",
+                stroke: "#ddd",
+                strokeWidth: 1,
+                cursor: "pointer"
+              },
+              text: {
+                attrs: {"font-size": 10, "font-family": "Arial, Helvetica, sans-serif"},
+                attrsHover: {"font-size": 14, "font-family": "Arial, Helvetica, sans-serif"}
+              },
+              attrsHover: {
+                animDuration: 200,
+                fill: "#555",
+              },
                     eventHandlers: {
                       click: (e, id, mapElem, textElem) => {
                         if (!self.provinces_used.includes(id)) {
                           console.log('Province', id, 'has no challenges assigned');
                           return;
                         }
-                        const chalid = self.provinces[id];
-                        if (chalid) {
-                          self.loadChallenge(chalid);
+                        
+                        // Get all challenges for this province
+                        const challengeIds = self.province_challenges[id] || [self.provinces[id]];
+                        
+                        if (challengeIds.length === 1) {
+                          // Single challenge, load it directly
+                          self.loadChallenge(challengeIds[0]);
+                        } else {
+                          // Multiple challenges, show selection modal
+                          self.showChallengeSelection(id, challengeIds);
                         }
                       }
                     }
-                  }
-                },
-                legend: {
-                  area: {
-                    title: "Categories",
-                    slices: self.category_colors
-                  }
-                },
-                areas: self.chal_areas,
-              };
-              
-              console.log('Creating map with config:', mapConfig);
-              console.log('Areas to render:', Object.keys(self.chal_areas));
-              console.log('Map container:', mapContainer);
-              console.log('Container dimensions:', $container.width(), 'x', $container.height());
-              
-              $(mapContainer).mapael(mapConfig);
-              
-              console.log('Map created successfully');
-            } catch (error) {
-              console.error('Error creating map:', error);
-              console.error('Error stack:', error.stack);
             }
-          };
-          
-          // Start waiting for container to be visible
-          waitForVisible();
-        });
-      });
+          },
+          legend: {
+            area: {
+              title: "Categories",
+              slices: self.category_colors
+            }
+          },
+          areas: self.chal_areas,
+        };
+        
+        console.log('Creating map with config:', mapConfig);
+        console.log('Areas to render:', Object.keys(self.chal_areas));
+        console.log('Map container:', mapContainer);
+        console.log('Container dimensions:', $container.width(), 'x', $container.height());
+        console.log('Map div dimensions:', $mapDiv.width(), 'x', $mapDiv.height());
+        
+        $(mapContainer).mapael(mapConfig);
+        
+        console.log('Map created successfully');
+      } catch (error) {
+        console.error('Error creating map:', error);
+        console.error('Error stack:', error.stack);
+      }
+    };
+    
+    // Start waiting after Alpine has processed
+    this.$nextTick(() => {
+      // Give Alpine a moment to show the container
+      setTimeout(waitForVisible, 100);
     });
   },
 
   async loadChallenges() {
     this.challenges = await CTFd.pages.challenges.getChallenges();
     this.initializeMap();
+  },
+
+  async showChallengeSelection(provinceCode, challengeIds) {
+    // Get challenge details for all challenges in this province
+    const challenges = this.challenges.filter(chal => challengeIds.includes(chal.id));
+    
+    if (challenges.length === 0) return;
+    
+    // Create a simple selection modal
+    const modalHtml = `
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Select Challenge - ${provinceCode}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <p>This province has ${challenges.length} challenge${challenges.length > 1 ? 's' : ''}:</p>
+            <div class="list-group">
+              ${challenges.map(chal => `
+                <button type="button" class="list-group-item list-group-item-action" data-challenge-id="${chal.id}">
+                  <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">${chal.name}</h6>
+                    <small>${parseInt(chal.value)} points</small>
+                  </div>
+                  <p class="mb-1">${chal.category}</p>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Create temporary modal for selection
+    const tempModal = document.createElement('div');
+    tempModal.className = 'modal fade';
+    tempModal.id = 'challenge-selection-modal';
+    tempModal.innerHTML = modalHtml;
+    document.body.appendChild(tempModal);
+    
+    const selectionModal = new Modal(tempModal);
+    selectionModal.show();
+    
+    // Add click handlers
+    tempModal.querySelectorAll('[data-challenge-id]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const challengeId = parseInt(btn.getAttribute('data-challenge-id'));
+        selectionModal.hide();
+        tempModal.addEventListener('hidden.bs.modal', () => {
+          document.body.removeChild(tempModal);
+          this.loadChallenge(challengeId);
+        }, { once: true });
+      });
+    });
+    
+    // Clean up on close
+    tempModal.addEventListener('hidden.bs.modal', () => {
+      if (document.body.contains(tempModal)) {
+        document.body.removeChild(tempModal);
+      }
+    }, { once: true });
   },
 
   async loadChallenge(challengeId) {
