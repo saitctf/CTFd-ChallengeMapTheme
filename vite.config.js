@@ -50,10 +50,12 @@ export default defineConfig({
             {
               src: "./assets/js/jquery.mapael.js",
               dest: "static/assets",
+              rename: "jquery.mapael.min.js",
             },
             {
               src: "./assets/js/canada_provinces.js",
               dest: "static/assets",
+              rename: "canada_provinces.min.js",
             },
           ],
           hook: "writeBundle",
