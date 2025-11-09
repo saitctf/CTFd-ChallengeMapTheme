@@ -594,26 +594,32 @@ Alpine.data("ChallengeMap", () => ({
     document.body.appendChild(tempModal);
     
     const selectionModal = new Modal(tempModal);
-    selectionModal.show();
+    
+    // Store challenge ID to load after modal closes
+    let selectedChallengeId = null;
     
     // Add click handlers
     tempModal.querySelectorAll('[data-challenge-id]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const challengeId = parseInt(btn.getAttribute('data-challenge-id'));
+        selectedChallengeId = parseInt(btn.getAttribute('data-challenge-id'));
         selectionModal.hide();
-        tempModal.addEventListener('hidden.bs.modal', () => {
-          document.body.removeChild(tempModal);
-          this.loadChallenge(challengeId);
-        }, { once: true });
       });
     });
     
-    // Clean up on close
+    // Clean up and load challenge after modal is hidden
     tempModal.addEventListener('hidden.bs.modal', () => {
+      // Bootstrap may have already removed the modal, so check first
       if (document.body.contains(tempModal)) {
         document.body.removeChild(tempModal);
       }
+      
+      // Load the selected challenge if one was chosen
+      if (selectedChallengeId) {
+        this.loadChallenge(selectedChallengeId);
+      }
     }, { once: true });
+    
+    selectionModal.show();
   },
 
   async loadChallenge(challengeId) {
