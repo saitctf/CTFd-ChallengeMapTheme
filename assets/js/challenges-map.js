@@ -418,7 +418,7 @@ Alpine.data("ChallengeMap", () => ({
   },
 
   createMap() {
-    // Wait for DOM to be ready and use jQuery ready
+    // Wait for DOM to be ready and container to be visible
     const self = this;
     this.$nextTick(() => {
       // Wait for jQuery to be available (CTFd core loads it)
@@ -435,77 +435,94 @@ Alpine.data("ChallengeMap", () => ({
       waitForJQuery(($) => {
         // Use jQuery ready to ensure DOM is fully ready
         $(function() {
-        const mapContainer = self.$refs.mapContainer;
-        if (!mapContainer) {
-          console.error('Map container not found');
-          return;
-        }
-        
-        if (!$.mapael) {
-          console.error('jQuery Mapael not loaded');
-          return;
-        }
-        
-        if (!$.mapael.maps || !$.mapael.maps.canada_provinces) {
-          console.error('Canada provinces map definition not found');
-          console.log('Available maps:', $.mapael.maps ? Object.keys($.mapael.maps) : 'none');
-          return;
-        }
-        
-        try {
-          const mapConfig = {
-            map: {
-              name: "canada_provinces",
-              cssClass: "map",
-              defaultArea: {
-                attrs: {
-                  fill: "#eee",
-                  stroke: "#ddd",
-                  strokeWidth: 1,
-                  cursor: "pointer"
-                },
-                text: {
-                  attrs: {"font-size": 10, "font-family": "Arial, Helvetica, sans-serif"},
-                  attrsHover: {"font-size": 14, "font-family": "Arial, Helvetica, sans-serif"}
-                },
-                attrsHover: {
-                  animDuration: 200,
-                  fill: "#555",
-                },
-                eventHandlers: {
-                  click: (e, id, mapElem, textElem) => {
-                    if (!self.provinces_used.includes(id)) {
-                      console.log('Province', id, 'has no challenges assigned');
-                      return;
-                    }
-                    const chalid = self.provinces[id];
-                    if (chalid) {
-                      self.loadChallenge(chalid);
+          // Wait for container to be visible (Alpine.js x-show)
+          const waitForVisible = () => {
+            const mapContainer = self.$refs.mapContainer;
+            if (!mapContainer) {
+              console.error('Map container not found');
+              return;
+            }
+            
+            // Check if container is visible
+            const $container = $(mapContainer);
+            const isVisible = $container.is(':visible') && $container.width() > 0 && $container.height() > 0;
+            
+            if (!isVisible) {
+              // Container is hidden, wait a bit and try again
+              setTimeout(waitForVisible, 100);
+              return;
+            }
+            
+            if (!$.mapael) {
+              console.error('jQuery Mapael not loaded');
+              return;
+            }
+            
+            if (!$.mapael.maps || !$.mapael.maps.canada_provinces) {
+              console.error('Canada provinces map definition not found');
+              console.log('Available maps:', $.mapael.maps ? Object.keys($.mapael.maps) : 'none');
+              return;
+            }
+            
+            try {
+              const mapConfig = {
+                map: {
+                  name: "canada_provinces",
+                  cssClass: "map",
+                  defaultArea: {
+                    attrs: {
+                      fill: "#eee",
+                      stroke: "#ddd",
+                      strokeWidth: 1,
+                      cursor: "pointer"
+                    },
+                    text: {
+                      attrs: {"font-size": 10, "font-family": "Arial, Helvetica, sans-serif"},
+                      attrsHover: {"font-size": 14, "font-family": "Arial, Helvetica, sans-serif"}
+                    },
+                    attrsHover: {
+                      animDuration: 200,
+                      fill: "#555",
+                    },
+                    eventHandlers: {
+                      click: (e, id, mapElem, textElem) => {
+                        if (!self.provinces_used.includes(id)) {
+                          console.log('Province', id, 'has no challenges assigned');
+                          return;
+                        }
+                        const chalid = self.provinces[id];
+                        if (chalid) {
+                          self.loadChallenge(chalid);
+                        }
+                      }
                     }
                   }
-                }
-              }
-            },
-            legend: {
-              area: {
-                title: "Categories",
-                slices: self.category_colors
-              }
-            },
-            areas: self.chal_areas,
+                },
+                legend: {
+                  area: {
+                    title: "Categories",
+                    slices: self.category_colors
+                  }
+                },
+                areas: self.chal_areas,
+              };
+              
+              console.log('Creating map with config:', mapConfig);
+              console.log('Areas to render:', Object.keys(self.chal_areas));
+              console.log('Map container:', mapContainer);
+              console.log('Container dimensions:', $container.width(), 'x', $container.height());
+              
+              $(mapContainer).mapael(mapConfig);
+              
+              console.log('Map created successfully');
+            } catch (error) {
+              console.error('Error creating map:', error);
+              console.error('Error stack:', error.stack);
+            }
           };
           
-          console.log('Creating map with config:', mapConfig);
-          console.log('Areas to render:', Object.keys(self.chal_areas));
-          console.log('Map container:', mapContainer);
-          
-          $(mapContainer).mapael(mapConfig);
-          
-          console.log('Map created successfully');
-        } catch (error) {
-          console.error('Error creating map:', error);
-          console.error('Error stack:', error.stack);
-        }
+          // Start waiting for container to be visible
+          waitForVisible();
         });
       });
     });
