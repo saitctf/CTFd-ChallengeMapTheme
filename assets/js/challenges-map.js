@@ -8,8 +8,8 @@ import highlight from "./theme/highlight";
 
 // Load map libraries dynamically
 function loadMapLibraries() {
-  return new Promise((resolve) => {
-    if (window.Raphael && window.jQuery && window.jQuery.mapael) {
+  return new Promise((resolve, reject) => {
+    if (window.Raphael && window.jQuery && window.jQuery.mapael && window.jQuery.mapael.maps && window.jQuery.mapael.maps.canada_provinces) {
       resolve();
       return;
     }
@@ -21,13 +21,31 @@ function loadMapLibraries() {
     ];
 
     let loaded = 0;
+    let hasError = false;
+    
     scripts.forEach(src => {
       const script = document.createElement('script');
       script.src = src;
       script.onload = () => {
         loaded++;
+        // Check if all scripts loaded and map is registered
         if (loaded === scripts.length) {
-          resolve();
+          // Give a small delay to ensure map is registered
+          setTimeout(() => {
+            if (window.jQuery && window.jQuery.mapael && window.jQuery.mapael.maps && window.jQuery.mapael.maps.canada_provinces) {
+              resolve();
+            } else {
+              console.error('Canada provinces map not found after loading scripts');
+              reject(new Error('Map definition not found'));
+            }
+          }, 100);
+        }
+      };
+      script.onerror = () => {
+        if (!hasError) {
+          hasError = true;
+          console.error('Failed to load script:', src);
+          reject(new Error(`Failed to load script: ${src}`));
         }
       };
       document.head.appendChild(script);
@@ -279,21 +297,29 @@ Alpine.data("ChallengeMap", () => ({
   category_colors: [],
 
   async init() {
-    this.challenges = await CTFd.pages.challenges.getChallenges();
-    
-    // Load map libraries and initialize map
-    await loadMapLibraries();
-    this.loaded = true;
-    this.initializeMap();
+    try {
+      this.challenges = await CTFd.pages.challenges.getChallenges();
+      
+      // Load map libraries and initialize map
+      await loadMapLibraries().catch(error => {
+        console.error('Failed to load map libraries:', error);
+        this.loaded = true; // Still set loaded to true to show the container
+      });
+      this.loaded = true;
+      this.initializeMap();
 
-    if (window.location.hash) {
-      let chalHash = decodeURIComponent(window.location.hash.substring(1));
-      let idx = chalHash.lastIndexOf("-");
-      if (idx >= 0) {
-        let pieces = [chalHash.slice(0, idx), chalHash.slice(idx + 1)];
-        let id = pieces[1];
-        await this.loadChallenge(id);
+      if (window.location.hash) {
+        let chalHash = decodeURIComponent(window.location.hash.substring(1));
+        let idx = chalHash.lastIndexOf("-");
+        if (idx >= 0) {
+          let pieces = [chalHash.slice(0, idx), chalHash.slice(idx + 1)];
+          let id = pieces[1];
+          await this.loadChallenge(id);
+        }
       }
+    } catch (error) {
+      console.error('Error initializing challenge map:', error);
+      this.loaded = true; // Still show the container even on error
     }
   },
 
@@ -376,6 +402,11 @@ Alpine.data("ChallengeMap", () => ({
         sliceValue: category
       });
     });
+    
+    // If no challenges, still show the map with all provinces (unassigned)
+    if (Object.keys(this.chal_areas).length === 0) {
+      console.log('No challenges found, showing empty map');
+    }
   },
 
   colorHash(str) {
@@ -398,14 +429,36 @@ Alpine.data("ChallengeMap", () => ({
     // Wait for DOM to be ready
     this.$nextTick(() => {
       const mapContainer = this.$refs.mapContainer;
-      if (mapContainer && window.jQuery && window.jQuery.mapael) {
-        $(mapContainer).mapael({
+      if (!mapContainer) {
+        console.error('Map container not found');
+        return;
+      }
+      
+      if (!window.jQuery) {
+        console.error('jQuery not loaded');
+        return;
+      }
+      
+      if (!window.jQuery.mapael) {
+        console.error('jQuery Mapael not loaded');
+        return;
+      }
+      
+      if (!window.jQuery.mapael.maps || !window.jQuery.mapael.maps.canada_provinces) {
+        console.error('Canada provinces map definition not found');
+        console.log('Available maps:', window.jQuery.mapael.maps ? Object.keys(window.jQuery.mapael.maps) : 'none');
+        return;
+      }
+      
+      try {
+        const mapConfig = {
           map: {
             name: "canada_provinces",
             defaultArea: {
               attrs: {
                 fill: "#eee",
                 stroke: "#ddd",
+                strokeWidth: 1,
                 cursor: "pointer"
               },
               text: {
@@ -418,9 +471,14 @@ Alpine.data("ChallengeMap", () => ({
               },
               eventHandlers: {
                 click: (e, id, mapElem, textElem) => {
-                  if (!this.provinces_used.includes(id)) return;
+                  if (!this.provinces_used.includes(id)) {
+                    console.log('Province', id, 'has no challenges assigned');
+                    return;
+                  }
                   const chalid = this.provinces[id];
-                  this.loadChallenge(chalid);
+                  if (chalid) {
+                    this.loadChallenge(chalid);
+                  }
                 }
               }
             }
@@ -432,7 +490,17 @@ Alpine.data("ChallengeMap", () => ({
             }
           },
           areas: this.chal_areas,
-        });
+        };
+        
+        console.log('Creating map with config:', mapConfig);
+        console.log('Areas to render:', Object.keys(this.chal_areas));
+        
+        $(mapContainer).mapael(mapConfig);
+        
+        console.log('Map created successfully');
+      } catch (error) {
+        console.error('Error creating map:', error);
+        console.error('Error stack:', error.stack);
       }
     });
   },
