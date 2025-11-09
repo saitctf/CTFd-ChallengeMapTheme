@@ -16,17 +16,31 @@
         // AMD. Register as an anonymous module.
         define(['jquery', 'mapael'], factory);
     } else {
-        // Browser globals
-        factory(jQuery, jQuery.mapael);
+        // Browser globals - wait for jQuery and Mapael to be ready
+        if (typeof jQuery !== 'undefined' && jQuery.mapael) {
+            factory(jQuery, jQuery.mapael);
+        } else {
+            // Wait for jQuery and Mapael to load
+            (function waitForMapael() {
+                if (typeof jQuery !== 'undefined' && jQuery.mapael && jQuery.mapael.maps) {
+                    factory(jQuery, jQuery.mapael);
+                } else {
+                    setTimeout(waitForMapael, 50);
+                }
+            })();
+        }
     }
 }(function ($, Mapael) {
 
     "use strict";
     
-    $.extend(true, Mapael,
-        {
-            maps :{
-                canada_provinces : {
+    // Ensure Mapael.maps exists
+    if (!Mapael.maps) {
+        Mapael.maps = {};
+    }
+    
+    // Register the Canada provinces map
+    Mapael.maps.canada_provinces = {
                     width : 1000,
                     height : 800,
                     getCoords : function (lat, lon) {
@@ -71,10 +85,28 @@
                         // Nunavut (NU) - Largest territory, central-northern
                         "NU" : "m 340,150 160,0 40,45 25,75 -25,90 -48,53 -80,-30 -48,-60 -25,-75 0,-98 z"
                     }
-                }
-            }
+                };
+
+    // Also ensure it's accessible via $.mapael.maps and $.fn.mapael.maps
+    // jQuery Mapael looks in both places
+    if ($.mapael) {
+        if (!$.mapael.maps) {
+            $.mapael.maps = {};
         }
-    );
+        $.mapael.maps.canada_provinces = Mapael.maps.canada_provinces;
+    }
+    
+    if ($.fn && $.fn.mapael) {
+        if (!$.fn.mapael.maps) {
+            $.fn.mapael.maps = {};
+        }
+        $.fn.mapael.maps.canada_provinces = Mapael.maps.canada_provinces;
+    }
+    
+    // Also set it on the global Mapael object
+    if (typeof Mapael !== 'undefined' && Mapael.maps) {
+        Mapael.maps.canada_provinces = Mapael.maps.canada_provinces;
+    }
 
     return Mapael;
 

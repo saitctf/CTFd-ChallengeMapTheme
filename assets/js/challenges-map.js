@@ -456,6 +456,7 @@ Alpine.data("ChallengeMap", () => ({
           const mapConfig = {
             map: {
               name: "canada_provinces",
+              cssClass: "map",
               defaultArea: {
                 attrs: {
                   fill: "#eee",
