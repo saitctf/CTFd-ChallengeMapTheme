@@ -1,5 +1,20 @@
+// Fallout Theme Color Palette
+$fallout-dark-blue: #001423;
+$fallout-brown: #8b5c29;
+$fallout-tan: #ffe1ba;
+$fallout-light-blue: #0066b1;
+$fallout-yellow: #fff773;
+
 @use "bootstrap/scss/bootstrap" as * with (
-  $info: #5c728f
+  $primary: $fallout-light-blue,
+  $secondary: $fallout-brown,
+  $info: $fallout-light-blue,
+  $warning: $fallout-yellow,
+  $dark: $fallout-dark-blue,
+  $body-bg: $fallout-dark-blue,
+  $body-color: $fallout-tan,
+  $link-color: $fallout-yellow,
+  $link-hover-color: $fallout-tan
 );
 
 @use "includes/components/table";
@@ -54,26 +69,103 @@ select {
   background-size: 8px 10px;
 }
 
-// US Map Styles
+// Fallout Theme Global Styles
+body {
+  background-color: $fallout-dark-blue;
+  color: $fallout-tan;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: $fallout-yellow;
+}
+
+a {
+  color: $fallout-yellow;
+  
+  &:hover {
+    color: $fallout-tan;
+  }
+}
+
+.navbar {
+  background-color: darken($fallout-dark-blue, 5%) !important;
+  border-bottom: 2px solid $fallout-brown;
+}
+
+.navbar-brand {
+  color: $fallout-yellow !important;
+}
+
+.navbar-nav .nav-link {
+  color: $fallout-tan !important;
+  
+  &:hover {
+    color: $fallout-yellow !important;
+  }
+}
+
+.btn-primary {
+  background-color: $fallout-light-blue;
+  border-color: $fallout-light-blue;
+  color: $fallout-dark-blue;
+  
+  &:hover {
+    background-color: darken($fallout-light-blue, 10%);
+    border-color: darken($fallout-light-blue, 10%);
+  }
+}
+
+.btn-secondary {
+  background-color: $fallout-brown;
+  border-color: $fallout-brown;
+  color: $fallout-tan;
+  
+  &:hover {
+    background-color: darken($fallout-brown, 10%);
+    border-color: darken($fallout-brown, 10%);
+  }
+}
+
+.card {
+  background-color: lighten($fallout-dark-blue, 5%);
+  border-color: $fallout-brown;
+  color: $fallout-tan;
+}
+
+.table {
+  color: $fallout-tan;
+  
+  thead th {
+    border-color: $fallout-brown;
+    color: $fallout-yellow;
+  }
+  
+  tbody td {
+    border-color: $fallout-brown;
+  }
+}
+
+// Canada Map Styles
 .map-container {
   height: 600px;
   width: 100%;
-  border: 1px solid #ddd;
+  border: 2px solid $fallout-brown;
   border-radius: 8px;
-  background-color: #f8f9fa;
+  background-color: lighten($fallout-dark-blue, 3%);
 }
 
 .mapael .mapTooltip {
   position: absolute;
-  background-color: #fff;
-  opacity: 0.9;
+  background-color: lighten($fallout-dark-blue, 10%);
+  opacity: 0.95;
   border-radius: 5px;
   padding: 10px;
   z-index: 1000;
   max-width: 200px;
   display: none;
-  color: #343434;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  color: $fallout-tan;
+  border: 1px solid $fallout-brown;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 .areaLegend {
@@ -81,16 +173,17 @@ select {
 }
 
 .areaLegend .legend {
-  background: white;
+  background: lighten($fallout-dark-blue, 5%);
+  border: 1px solid $fallout-brown;
   border-radius: 8px;
   padding: 15px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .areaLegend .legend .legendTitle {
   font-weight: bold;
   margin-bottom: 10px;
-  color: #333;
+  color: $fallout-yellow;
 }
 
 .areaLegend .legend .legendSlice {
@@ -104,9 +197,10 @@ select {
   height: 20px;
   margin-right: 10px;
   border-radius: 3px;
+  border: 1px solid $fallout-brown;
 }
 
 .areaLegend .legend .legendSlice .legendLabel {
   font-size: 14px;
-  color: #555;
+  color: $fallout-tan;
 }
