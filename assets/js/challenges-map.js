@@ -9,29 +9,36 @@ import highlight from "./theme/highlight";
 // Load map libraries - scripts are loaded in template, just verify they're ready
 function loadMapLibraries() {
   return new Promise((resolve, reject) => {
+    // Helper to get jQuery (CTFd might use $ or jQuery)
+    const getJQuery = () => window.$ || window.jQuery;
+    
     // Check if already loaded
-    if (window.Raphael && window.jQuery && window.jQuery.mapael && window.jQuery.mapael.maps && window.jQuery.mapael.maps.canada_provinces) {
+    const $ = getJQuery();
+    if (window.Raphael && $ && $.mapael && $.mapael.maps && $.mapael.maps.canada_provinces) {
       resolve();
       return;
     }
 
     // Scripts should be loaded in template, just wait for them
     let attempts = 0;
-    const maxAttempts = 50; // 5 seconds max wait
+    const maxAttempts = 100; // 10 seconds max wait (increased for slower connections)
     
     const checkInterval = setInterval(() => {
       attempts++;
+      const $ = getJQuery();
       
-      if (window.Raphael && window.jQuery && window.jQuery.mapael && window.jQuery.mapael.maps && window.jQuery.mapael.maps.canada_provinces) {
+      if (window.Raphael && $ && $.mapael && $.mapael.maps && $.mapael.maps.canada_provinces) {
         clearInterval(checkInterval);
         resolve();
       } else if (attempts >= maxAttempts) {
         clearInterval(checkInterval);
         console.error('Map libraries not loaded after waiting');
         console.log('Raphael:', !!window.Raphael);
-        console.log('jQuery:', !!window.jQuery);
-        console.log('Mapael:', !!(window.jQuery && window.jQuery.mapael));
-        console.log('Available maps:', window.jQuery && window.jQuery.mapael && window.jQuery.mapael.maps ? Object.keys(window.jQuery.mapael.maps) : 'none');
+        console.log('jQuery ($):', !!window.$);
+        console.log('jQuery (jQuery):', !!window.jQuery);
+        const $ = getJQuery();
+        console.log('Mapael:', !!($ && $.mapael));
+        console.log('Available maps:', $ && $.mapael && $.mapael.maps ? Object.keys($.mapael.maps) : 'none');
         reject(new Error('Map libraries not loaded'));
       }
     }, 100);
@@ -414,14 +421,20 @@ Alpine.data("ChallengeMap", () => ({
     // Wait for DOM to be ready and use jQuery ready
     const self = this;
     this.$nextTick(() => {
-      // Use jQuery ready to ensure DOM is fully ready
-      const $ = window.$ || window.jQuery;
-      if (!$) {
-        console.error('jQuery not available');
-        return;
-      }
+      // Wait for jQuery to be available (CTFd core loads it)
+      const waitForJQuery = (callback) => {
+        const $ = window.$ || window.jQuery;
+        if ($) {
+          callback($);
+        } else {
+          // Wait a bit and try again
+          setTimeout(() => waitForJQuery(callback), 50);
+        }
+      };
       
-      $(function() {
+      waitForJQuery(($) => {
+        // Use jQuery ready to ensure DOM is fully ready
+        $(function() {
         const mapContainer = self.$refs.mapContainer;
         if (!mapContainer) {
           console.error('Map container not found');
@@ -492,6 +505,7 @@ Alpine.data("ChallengeMap", () => ({
           console.error('Error creating map:', error);
           console.error('Error stack:', error.stack);
         }
+        });
       });
     });
   },
