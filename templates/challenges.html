@@ -49,5 +49,8 @@
 {% endblock %}
 
 {% block scripts %}
+  <script src="{{ url_for('views.themes', path='assets/raphael.min.js') }}"></script>
+  <script src="{{ url_for('views.themes', path='assets/jquery.mapael.js') }}"></script>
+  <script src="{{ url_for('views.themes', path='assets/canada_provinces.js') }}"></script>
   {{ Assets.js("assets/js/challenges-map.js") }}
 {% endblock %}

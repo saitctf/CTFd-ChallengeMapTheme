@@ -6,50 +6,35 @@ import CTFd from "./index";
 import { Modal, Tab, Tooltip } from "bootstrap";
 import highlight from "./theme/highlight";
 
-// Load map libraries dynamically
+// Load map libraries - scripts are loaded in template, just verify they're ready
 function loadMapLibraries() {
   return new Promise((resolve, reject) => {
+    // Check if already loaded
     if (window.Raphael && window.jQuery && window.jQuery.mapael && window.jQuery.mapael.maps && window.jQuery.mapael.maps.canada_provinces) {
       resolve();
       return;
     }
 
-    const scripts = [
-      '/themes/CTFd-ChallengeMapTheme/static/assets/raphael.min.js',
-      '/themes/CTFd-ChallengeMapTheme/static/assets/jquery.mapael.js',
-      '/themes/CTFd-ChallengeMapTheme/static/assets/canada_provinces.js'
-    ];
-
-    let loaded = 0;
-    let hasError = false;
+    // Scripts should be loaded in template, just wait for them
+    let attempts = 0;
+    const maxAttempts = 50; // 5 seconds max wait
     
-    scripts.forEach(src => {
-      const script = document.createElement('script');
-      script.src = src;
-      script.onload = () => {
-        loaded++;
-        // Check if all scripts loaded and map is registered
-        if (loaded === scripts.length) {
-          // Give a small delay to ensure map is registered
-          setTimeout(() => {
-            if (window.jQuery && window.jQuery.mapael && window.jQuery.mapael.maps && window.jQuery.mapael.maps.canada_provinces) {
-              resolve();
-            } else {
-              console.error('Canada provinces map not found after loading scripts');
-              reject(new Error('Map definition not found'));
-            }
-          }, 100);
-        }
-      };
-      script.onerror = () => {
-        if (!hasError) {
-          hasError = true;
-          console.error('Failed to load script:', src);
-          reject(new Error(`Failed to load script: ${src}`));
-        }
-      };
-      document.head.appendChild(script);
-    });
+    const checkInterval = setInterval(() => {
+      attempts++;
+      
+      if (window.Raphael && window.jQuery && window.jQuery.mapael && window.jQuery.mapael.maps && window.jQuery.mapael.maps.canada_provinces) {
+        clearInterval(checkInterval);
+        resolve();
+      } else if (attempts >= maxAttempts) {
+        clearInterval(checkInterval);
+        console.error('Map libraries not loaded after waiting');
+        console.log('Raphael:', !!window.Raphael);
+        console.log('jQuery:', !!window.jQuery);
+        console.log('Mapael:', !!(window.jQuery && window.jQuery.mapael));
+        console.log('Available maps:', window.jQuery && window.jQuery.mapael && window.jQuery.mapael.maps ? Object.keys(window.jQuery.mapael.maps) : 'none');
+        reject(new Error('Map libraries not loaded'));
+      }
+    }, 100);
   });
 }
 
@@ -426,82 +411,88 @@ Alpine.data("ChallengeMap", () => ({
   },
 
   createMap() {
-    // Wait for DOM to be ready
+    // Wait for DOM to be ready and use jQuery ready
+    const self = this;
     this.$nextTick(() => {
-      const mapContainer = this.$refs.mapContainer;
-      if (!mapContainer) {
-        console.error('Map container not found');
+      // Use jQuery ready to ensure DOM is fully ready
+      const $ = window.$ || window.jQuery;
+      if (!$) {
+        console.error('jQuery not available');
         return;
       }
       
-      if (!window.jQuery) {
-        console.error('jQuery not loaded');
-        return;
-      }
-      
-      if (!window.jQuery.mapael) {
-        console.error('jQuery Mapael not loaded');
-        return;
-      }
-      
-      if (!window.jQuery.mapael.maps || !window.jQuery.mapael.maps.canada_provinces) {
-        console.error('Canada provinces map definition not found');
-        console.log('Available maps:', window.jQuery.mapael.maps ? Object.keys(window.jQuery.mapael.maps) : 'none');
-        return;
-      }
-      
-      try {
-        const mapConfig = {
-          map: {
-            name: "canada_provinces",
-            defaultArea: {
-              attrs: {
-                fill: "#eee",
-                stroke: "#ddd",
-                strokeWidth: 1,
-                cursor: "pointer"
-              },
-              text: {
-                attrs: {"font-size": 10, "font-family": "Arial, Helvetica, sans-serif"},
-                attrsHover: {"font-size": 14, "font-family": "Arial, Helvetica, sans-serif"}
-              },
-              attrsHover: {
-                animDuration: 200,
-                fill: "#555",
-              },
-              eventHandlers: {
-                click: (e, id, mapElem, textElem) => {
-                  if (!this.provinces_used.includes(id)) {
-                    console.log('Province', id, 'has no challenges assigned');
-                    return;
-                  }
-                  const chalid = this.provinces[id];
-                  if (chalid) {
-                    this.loadChallenge(chalid);
+      $(function() {
+        const mapContainer = self.$refs.mapContainer;
+        if (!mapContainer) {
+          console.error('Map container not found');
+          return;
+        }
+        
+        if (!$.mapael) {
+          console.error('jQuery Mapael not loaded');
+          return;
+        }
+        
+        if (!$.mapael.maps || !$.mapael.maps.canada_provinces) {
+          console.error('Canada provinces map definition not found');
+          console.log('Available maps:', $.mapael.maps ? Object.keys($.mapael.maps) : 'none');
+          return;
+        }
+        
+        try {
+          const mapConfig = {
+            map: {
+              name: "canada_provinces",
+              defaultArea: {
+                attrs: {
+                  fill: "#eee",
+                  stroke: "#ddd",
+                  strokeWidth: 1,
+                  cursor: "pointer"
+                },
+                text: {
+                  attrs: {"font-size": 10, "font-family": "Arial, Helvetica, sans-serif"},
+                  attrsHover: {"font-size": 14, "font-family": "Arial, Helvetica, sans-serif"}
+                },
+                attrsHover: {
+                  animDuration: 200,
+                  fill: "#555",
+                },
+                eventHandlers: {
+                  click: (e, id, mapElem, textElem) => {
+                    if (!self.provinces_used.includes(id)) {
+                      console.log('Province', id, 'has no challenges assigned');
+                      return;
+                    }
+                    const chalid = self.provinces[id];
+                    if (chalid) {
+                      self.loadChallenge(chalid);
+                    }
                   }
                 }
               }
-            }
-          },
-          legend: {
-            area: {
-              title: "Categories",
-              slices: this.category_colors
-            }
-          },
-          areas: this.chal_areas,
-        };
-        
-        console.log('Creating map with config:', mapConfig);
-        console.log('Areas to render:', Object.keys(this.chal_areas));
-        
-        $(mapContainer).mapael(mapConfig);
-        
-        console.log('Map created successfully');
-      } catch (error) {
-        console.error('Error creating map:', error);
-        console.error('Error stack:', error.stack);
-      }
+            },
+            legend: {
+              area: {
+                title: "Categories",
+                slices: self.category_colors
+              }
+            },
+            areas: self.chal_areas,
+          };
+          
+          console.log('Creating map with config:', mapConfig);
+          console.log('Areas to render:', Object.keys(self.chal_areas));
+          console.log('Map container:', mapContainer);
+          
+          $(mapContainer).mapael(mapConfig);
+          
+          console.log('Map created successfully');
+        } catch (error) {
+          console.error('Error creating map:', error);
+          console.error('Error stack:', error.stack);
+        }
+      });
     });
   },
 
