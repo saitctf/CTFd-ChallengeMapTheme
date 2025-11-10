@@ -287,6 +287,8 @@ Alpine.data("ChallengeMap", () => ({
   categories: [],
   category_colors: [],
   province_challenges: {}, // Store all challenges per province
+  chal_plots: {}, // Store challenge plots/icons on map
+  province_centers: {}, // Store center coordinates for each province
 
   async init() {
     try {
@@ -324,11 +326,29 @@ Alpine.data("ChallengeMap", () => ({
       'YT':13
     };
 
+    // Province center coordinates (approximate centers for icon placement)
+    this.province_centers = {
+      'BC': { x: 200, y: 350 },   // British Columbia
+      'AB': { x: 235, y: 340 },   // Alberta
+      'SK': { x: 345, y: 340 },   // Saskatchewan
+      'MB': { x: 447, y: 340 },   // Manitoba
+      'ON': { x: 560, y: 360 },  // Ontario
+      'QC': { x: 657, y: 360 },  // Quebec
+      'NB': { x: 705, y: 360 },  // New Brunswick
+      'NS': { x: 710, y: 380 },  // Nova Scotia
+      'PE': { x: 700, y: 355 },  // Prince Edward Island
+      'NL': { x: 765, y: 330 },  // Newfoundland and Labrador
+      'YT': { x: 115, y: 150 },  // Yukon
+      'NT': { x: 220, y: 200 },  // Northwest Territories
+      'NU': { x: 360, y: 200 }   // Nunavut
+    };
+
     this.provinces_used = [];
     this.chal_areas = {};
     this.categories = [];
     this.category_colors = [];
     this.province_challenges = {};
+    this.chal_plots = {};
 
     this.mapChallengesToProvinces();
     this.createMap();
@@ -368,6 +388,44 @@ Alpine.data("ChallengeMap", () => ({
           this.provinces_used.push(province);
           // Store the first challenge ID for backward compatibility
           this.provinces[province] = categoryChallenges[0].id;
+          
+          // Create plots (icons) for each challenge in this province
+          const center = this.province_centers[province];
+          if (center) {
+            categoryChallenges.forEach((chal, chalIndex) => {
+              // Offset multiple challenges slightly
+              const offsetX = categoryChallenges.length > 1 ? (chalIndex - (categoryChallenges.length - 1) / 2) * 30 : 0;
+              const offsetY = categoryChallenges.length > 1 ? (chalIndex % 2) * 20 : 0;
+              
+              const plotId = `chal_${chal.id}`;
+              const isSolved = chal.solved_by_me || false;
+              
+              this.chal_plots[plotId] = {
+                x: center.x + offsetX,
+                y: center.y + offsetY,
+                size: 20,
+                type: "svg",
+                width: 24,
+                height: 24,
+                path: this.getFalloutIconPath(),
+                attrs: {
+                  fill: isSolved ? "#0066b1" : "#fff773", // Light blue if solved, yellow if not
+                  stroke: "#8b5c29", // Brown border
+                  "stroke-width": 2,
+                  opacity: isSolved ? 0.8 : 1.0
+                },
+                attrsHover: {
+                  opacity: 1.0,
+                  transform: "s1.2"
+                },
+                tooltip: {
+                  content: `<span style="font-weight:bold;">${chal.name}</span><br/>${parseInt(chal.value)} points<br/>${chal.category}${isSolved ? '<br/><span style="color:#0066b1;">✓ Solved</span>' : ''}`
+                },
+                challengeId: chal.id,
+                isSolved: isSolved
+              };
+            });
+          }
         }
       }
     });
@@ -429,6 +487,12 @@ Alpine.data("ChallengeMap", () => ({
     return "#" + color.substring(0, 6);
   },
 
+  // Fallout-themed radiation symbol icon (SVG path)
+  getFalloutIconPath() {
+    // Radiation symbol - three blades with circle in center
+    return "M 12,2 L 12,6 M 12,18 L 12,22 M 2,12 L 6,12 M 18,12 L 22,12 M 4.343,4.343 L 7.071,7.071 M 16.929,16.929 L 19.657,19.657 M 4.343,19.657 L 7.071,16.929 M 16.929,7.071 L 19.657,4.343 M 12,8 A 4,4 0 0,1 12,16 A 4,4 0 0,1 12,8 Z";
+  },
+
   createMap() {
     // Wait for DOM to be ready and container to be visible
     const self = this;
@@ -484,8 +548,8 @@ Alpine.data("ChallengeMap", () => ({
             cssClass: "map",
             defaultArea: {
               attrs: {
-                fill: "#eee",
-                stroke: "#ddd",
+                fill: "#001423", // Fallout dark blue
+                stroke: "#8b5c29", // Fallout brown
                 strokeWidth: 1,
                 cursor: "pointer"
               },
@@ -495,27 +559,47 @@ Alpine.data("ChallengeMap", () => ({
               },
               attrsHover: {
                 animDuration: 200,
-                fill: "#555",
+                fill: "#001a2e", // Slightly lighter dark blue
               },
-                    eventHandlers: {
-                      click: (e, id, mapElem, textElem) => {
-                        if (!self.provinces_used.includes(id)) {
-                          console.log('Province', id, 'has no challenges assigned');
-                          return;
-                        }
-                        
-                        // Get all challenges for this province
-                        const challengeIds = self.province_challenges[id] || [self.provinces[id]];
-                        
-                        if (challengeIds.length === 1) {
-                          // Single challenge, load it directly
-                          self.loadChallenge(challengeIds[0]);
-                        } else {
-                          // Multiple challenges, show selection modal
-                          self.showChallengeSelection(id, challengeIds);
-                        }
-                      }
-                    }
+              eventHandlers: {
+                click: (e, id, mapElem, textElem) => {
+                  if (!self.provinces_used.includes(id)) {
+                    console.log('Province', id, 'has no challenges assigned');
+                    return;
+                  }
+                  
+                  // Get all challenges for this province
+                  const challengeIds = self.province_challenges[id] || [self.provinces[id]];
+                  
+                  if (challengeIds.length === 1) {
+                    // Single challenge, load it directly
+                    self.loadChallenge(challengeIds[0]);
+                  } else {
+                    // Multiple challenges, show selection modal
+                    self.showChallengeSelection(id, challengeIds);
+                  }
+                }
+              }
+            },
+            defaultPlot: {
+              size: 20,
+              attrs: {
+                fill: "#fff773", // Fallout yellow
+                stroke: "#8b5c29", // Fallout brown
+                "stroke-width": 2
+              },
+              attrsHover: {
+                opacity: 1.0,
+                transform: "s1.2"
+              },
+              eventHandlers: {
+                click: function(e, id, mapElem, textElem) {
+                  const plot = self.chal_plots[id];
+                  if (plot && plot.challengeId) {
+                    self.loadChallenge(plot.challengeId);
+                  }
+                }
+              }
             }
           },
           legend: {
@@ -525,15 +609,23 @@ Alpine.data("ChallengeMap", () => ({
             }
           },
           areas: self.chal_areas,
+          plots: self.chal_plots,
         };
         
         console.log('Creating map with config:', mapConfig);
         console.log('Areas to render:', Object.keys(self.chal_areas));
+        console.log('Plots to render:', Object.keys(self.chal_plots));
         console.log('Map container:', mapContainer);
         console.log('Container dimensions:', $container.width(), 'x', $container.height());
         console.log('Map div dimensions:', $mapDiv.width(), 'x', $mapDiv.height());
         
-        $(mapContainer).mapael(mapConfig);
+        const mapaelInstance = $(mapContainer).mapael(mapConfig);
+        
+        // Add checkmarks for solved challenges after map is created
+        // Use setTimeout to ensure map is fully rendered
+        setTimeout(() => {
+          self.addCheckmarksToSolvedChallenges($(mapContainer));
+        }, 200);
         
         console.log('Map created successfully');
       } catch (error) {
@@ -647,6 +739,32 @@ Alpine.data("ChallengeMap", () => ({
     selectionModal.show();
   },
 
+  addCheckmarksToSolvedChallenges($mapContainer) {
+    // Add checkmark overlays for solved challenges
+    const self = this;
+    Object.keys(this.chal_plots).forEach(plotId => {
+      const plot = this.chal_plots[plotId];
+      if (plot && plot.isSolved) {
+        // Get the mapael instance
+        const mapaelInstance = $mapContainer.data('mapael');
+        if (mapaelInstance && mapaelInstance.paper) {
+          const paper = mapaelInstance.paper;
+          // Draw checkmark at plot position (larger, more visible)
+          const checkmark = paper.path(`M ${plot.x - 10},${plot.y} L ${plot.x - 2},${plot.y + 8} L ${plot.x + 10},${plot.y - 8}`)
+            .attr({
+              stroke: "#0066b1", // Fallout light blue
+              "stroke-width": 4,
+              "stroke-linecap": "round",
+              "stroke-linejoin": "round",
+              "fill": "none"
+            });
+          // Store checkmark reference
+          plot.checkmark = checkmark;
+        }
+      }
+    });
+  },
+
   async loadChallenge(challengeId) {
     await CTFd.pages.challenge.displayChallenge(challengeId, challenge => {
       challenge.data.view = addTargetBlank(challenge.data.view);
@@ -662,6 +780,8 @@ Alpine.data("ChallengeMap", () => ({
           event => {
             // Remove location hash
             history.replaceState(null, null, " ");
+            // Refresh map to show updated solved status
+            self.initializeMap();
           },
           { once: true },
         );
