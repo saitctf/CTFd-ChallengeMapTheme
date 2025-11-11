@@ -38,7 +38,7 @@
     ]
   },
   "assets/js/challenges-map.js": {
-    "file": "assets/challenges_map.08a9644b.js",
+    "file": "assets/challenges_map.501d79fb.js",
     "src": "assets/js/challenges-map.js",
     "isEntry": true,
     "imports": [
@@ -152,7 +152,7 @@
     ]
   },
   "assets/scss/main.scss": {
-    "file": "assets/main.d5f69eec.css",
+    "file": "assets/main.42fd302c.css",
     "src": "assets/scss/main.scss",
     "isEntry": true
   }

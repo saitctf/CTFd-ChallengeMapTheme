@@ -13,7 +13,7 @@ function loadMapLibraries() {
     
     // Check if already loaded
     const $ = getJQuery();
-    if (window.Raphael && $ && $.mapael && $.mapael.maps && $.mapael.maps.canada_provinces) {
+    if (window.Raphael && $ && $.mapael && $.mapael.maps && $.mapael.maps.islands) {
       resolve();
       return;
     }
@@ -344,41 +344,45 @@ Alpine.data("ChallengeMap", () => ({
   // CUSTOMIZATION: Adjust province_centers coordinates to reposition icons
   // ========================================================================
   initializeMap() {
-    // Initialize provinces mapping (Canada: 10 provinces + 3 territories)
-    // This is used for category-to-province assignment
-    // CUSTOMIZE: Add/remove provinces or change the order
+    // ====================================================================
+    // ISLANDS MAPPING - Each island represents a category
+    // ====================================================================
+    // Islands are numbered ISLAND1 through ISLAND13.
+    // Each category will be assigned to an island in order.
+    // CUSTOMIZE: Add/remove islands or change the order
+    // ====================================================================
     this.provinces = {
-      'AB':1, 'BC':2, 'MB':3, 'NB':4,
-      'NL':5, 'NS':6, 'ON':7, 'PE':8,
-      'QC':9, 'SK':10, 'NT':11, 'NU':12,
-      'YT':13
+      'ISLAND1':1, 'ISLAND2':2, 'ISLAND3':3, 'ISLAND4':4,
+      'ISLAND5':5, 'ISLAND6':6, 'ISLAND7':7, 'ISLAND8':8,
+      'ISLAND9':9, 'ISLAND10':10, 'ISLAND11':11, 'ISLAND12':12,
+      'ISLAND13':13
     };
 
     // ====================================================================
-    // PROVINCE CENTER COORDINATES - CUSTOMIZE ICON POSITIONS HERE
+    // ISLAND CENTER COORDINATES - CUSTOMIZE DOT POSITIONS HERE
     // ====================================================================
-    // These X/Y coordinates determine where challenge icons appear on the map.
+    // These X/Y coordinates determine where challenge dots appear on each island.
     // Coordinates are in the map's SVG coordinate system (0-1000 width, 0-800 height).
     // 
-    // To adjust icon positions:
+    // To adjust dot positions:
     // - Increase X to move right, decrease to move left
     // - Increase Y to move down, decrease to move up
-    // - Adjust these values to center icons better within each province
+    // - Adjust these values to center dots better within each island
     // ====================================================================
     this.province_centers = {
-      'BC': { x: 200, y: 350 },   // British Columbia
-      'AB': { x: 235, y: 340 },   // Alberta
-      'SK': { x: 345, y: 340 },   // Saskatchewan
-      'MB': { x: 447, y: 340 },   // Manitoba
-      'ON': { x: 560, y: 360 },  // Ontario
-      'QC': { x: 657, y: 360 },  // Quebec
-      'NB': { x: 705, y: 360 },  // New Brunswick
-      'NS': { x: 710, y: 380 },  // Nova Scotia
-      'PE': { x: 700, y: 355 },  // Prince Edward Island
-      'NL': { x: 765, y: 330 },  // Newfoundland and Labrador
-      'YT': { x: 115, y: 150 },  // Yukon
-      'NT': { x: 220, y: 200 },  // Northwest Territories
-      'NU': { x: 360, y: 200 }   // Nunavut
+      'ISLAND1': { x: 190, y: 200 },   // Top left island
+      'ISLAND2': { x: 450, y: 180 },   // Top center island
+      'ISLAND3': { x: 740, y: 200 },   // Top right island
+      'ISLAND4': { x: 245, y: 400 },   // Middle left island
+      'ISLAND5': { x: 505, y: 380 },   // Middle center island
+      'ISLAND6': { x: 765, y: 400 },   // Middle right island
+      'ISLAND7': { x: 225, y: 600 },   // Bottom left island
+      'ISLAND8': { x: 530, y: 580 },   // Bottom center island
+      'ISLAND9': { x: 795, y: 600 },   // Bottom right island
+      'ISLAND10': { x: 115, y: 450 },  // Far left island
+      'ISLAND11': { x: 885, y: 450 },  // Far right island
+      'ISLAND12': { x: 80, y: 250 },   // Top far left island
+      'ISLAND13': { x: 920, y: 250 }  // Top far right island
     };
 
     this.provinces_used = [];
@@ -428,17 +432,10 @@ Alpine.data("ChallengeMap", () => ({
       // Determine which province this challenge belongs to
       let province = null;
       
-      // First, try to match category name to a province code
-      // Convert category to uppercase and check if it matches a province code
-      const categoryUpper = chal.category.toUpperCase().replace(/[^A-Z]/g, '');
-      if (this.provinces.hasOwnProperty(categoryUpper) && categoryUpper.length <= 3) {
-        // Category matches a province code (e.g., "WEB" → "WEB")
-        province = categoryUpper;
-      } else {
-        // Category doesn't match a province code, assign in order
-        const categoryIndex = this.categories.indexOf(chal.category);
-        province = province_keys[categoryIndex % province_keys.length];
-      }
+      // Assign category to an island in order
+      // Each category gets its own island
+      const categoryIndex = this.categories.indexOf(chal.category);
+      province = province_keys[categoryIndex % province_keys.length];
 
       // Initialize province tracking if needed
       if (!categoryToProvince[chal.category]) {
@@ -495,12 +492,13 @@ Alpine.data("ChallengeMap", () => ({
         // - offsetY: Vertical spacing (20 = pixels between rows)
         // - Layout: Arrange in a grid or line pattern
         // ========================================================
-        // Arrange icons in a grid pattern
+        // Arrange dots in a grid pattern within the island
+        // Use tighter spacing for better containment within islands
         const cols = Math.ceil(Math.sqrt(totalInProvince));
         const row = Math.floor(challengeIndexInProvince / cols);
         const col = challengeIndexInProvince % cols;
-        const offsetX = (col - (cols - 1) / 2) * 35; // Horizontal spacing
-        const offsetY = (row - Math.floor((totalInProvince - 1) / cols) / 2) * 35; // Vertical spacing
+        const offsetX = (col - (cols - 1) / 2) * 25; // Horizontal spacing (reduced from 35)
+        const offsetY = (row - Math.floor((totalInProvince - 1) / cols) / 2) * 25; // Vertical spacing (reduced from 35)
         
         const plotId = `chal_${chal.id}`;
         const isSolved = chal.solved_by_me || false;
@@ -521,23 +519,27 @@ Alpine.data("ChallengeMap", () => ({
         // - attrsHover: Effects when hovering (transform = scale)
         // - tooltip.content: HTML shown on hover
         // ========================================================
+        // ========================================================
+        // DOT CONFIGURATION - Simple circle dots for challenges
+        // ========================================================
+        // Using circles instead of SVG paths for better performance
+        // and to avoid hover jumping issues
+        // ========================================================
         this.chal_plots[plotId] = {
           x: center.x + offsetX,              // X position on map
           y: center.y + offsetY,             // Y position on map
-          size: 20,                          // Base size (for circles)
-          type: "svg",                       // Icon type: "svg", "circle", "square", or "image"
-          width: 24,                         // Icon width in pixels
-          height: 24,                        // Icon height in pixels
-          path: this.getFalloutIconPath(),   // SVG path data (see getFalloutIconPath())
+          size: 12,                          // CUSTOMIZE: Dot radius in pixels (smaller for dots)
+          type: "circle",                    // Use circle type for simple dots (no transform issues)
           attrs: {
-            fill: isSolved ? "#0066b1" : "#fff773",  // CUSTOMIZE: Icon fill color (solved vs unsolved)
+            fill: isSolved ? "#0066b1" : "#fff773",  // CUSTOMIZE: Dot fill color (solved vs unsolved)
             stroke: "#8b5c29",                       // CUSTOMIZE: Border color (Fallout brown)
             "stroke-width": 2,                       // CUSTOMIZE: Border thickness
-            opacity: isSolved ? 0.8 : 1.0            // CUSTOMIZE: Transparency (solved icons slightly faded)
+            opacity: isSolved ? 0.8 : 1.0            // CUSTOMIZE: Transparency (solved dots slightly faded)
           },
           attrsHover: {
             opacity: 1.0,                           // CUSTOMIZE: Hover opacity
-            transform: "s1.2"                        // CUSTOMIZE: Hover scale (s1.2 = 120% size)
+            fill: isSolved ? "#0088dd" : "#ffff99",  // CUSTOMIZE: Hover color (lighter)
+            "stroke-width": 3                        // CUSTOMIZE: Thicker border on hover (no transform to avoid jumping)
           },
           tooltip: {
             // CUSTOMIZE: Tooltip HTML content shown on hover
@@ -589,8 +591,8 @@ Alpine.data("ChallengeMap", () => ({
             const cols = Math.ceil(Math.sqrt(totalInProvince));
             const row = Math.floor(challengeIndex / cols);
             const col = challengeIndex % cols;
-            const offsetX = (col - (cols - 1) / 2) * 35;
-            const offsetY = (row - Math.floor((totalInProvince - 1) / cols) / 2) * 35;
+            const offsetX = (col - (cols - 1) / 2) * 25; // Reduced spacing
+            const offsetY = (row - Math.floor((totalInProvince - 1) / cols) / 2) * 25; // Reduced spacing
             
             this.chal_plots[plotId].x = center.x + offsetX;
             this.chal_plots[plotId].y = center.y + offsetY;
@@ -719,8 +721,8 @@ Alpine.data("ChallengeMap", () => ({
         return;
       }
       
-      if (!$.mapael.maps || !$.mapael.maps.canada_provinces) {
-        console.error('Canada provinces map definition not found');
+      if (!$.mapael.maps || !$.mapael.maps.islands) {
+        console.error('Islands map definition not found');
         console.log('Available maps:', $.mapael.maps ? Object.keys($.mapael.maps) : 'none');
         return;
       }
@@ -738,7 +740,7 @@ Alpine.data("ChallengeMap", () => ({
         // ====================================================================
         const mapConfig = {
           map: {
-            name: "canada_provinces",  // Map definition name (from canada_provinces.js)
+            name: "islands",            // Map definition name (from islands_map.js)
             cssClass: "map",            // CSS class for map container
             // ================================================================
             // DEFAULT AREA CONFIGURATION - CUSTOMIZE PROVINCE STYLING
@@ -747,19 +749,19 @@ Alpine.data("ChallengeMap", () => ({
             // ================================================================
             defaultArea: {
               attrs: {
-                fill: "#001423",        // CUSTOMIZE: Province fill color (Fallout dark blue)
-                stroke: "#8b5c29",      // CUSTOMIZE: Province border color (Fallout brown)
-                strokeWidth: 1,         // CUSTOMIZE: Border thickness
+                fill: "#8b5c29",        // CUSTOMIZE: Island fill color (Fallout brown)
+                stroke: "#ffe1ba",      // CUSTOMIZE: Island border color (Fallout tan)
+                strokeWidth: 2,         // CUSTOMIZE: Border thickness (thicker for visibility)
                 cursor: "pointer"       // Cursor style on hover
               },
               text: {
-                // CUSTOMIZE: Province label text styling
-                attrs: {"font-size": 10, "font-family": "Arial, Helvetica, sans-serif"},
-                attrsHover: {"font-size": 14, "font-family": "Arial, Helvetica, sans-serif"}
+                // CUSTOMIZE: Island label text styling
+                attrs: {"font-size": 12, "font-family": "Arial, Helvetica, sans-serif", "fill": "#fff773"},
+                attrsHover: {"font-size": 14, "font-family": "Arial, Helvetica, sans-serif", "fill": "#fff773"}
               },
               attrsHover: {
                 animDuration: 200,      // CUSTOMIZE: Hover animation duration (ms)
-                fill: "#001a2e",        // CUSTOMIZE: Province color on hover (lighter dark blue)
+                fill: "#a66d3a",        // CUSTOMIZE: Island color on hover (lighter brown)
               },
               eventHandlers: {
                 // CUSTOMIZE: Behavior when clicking a province
@@ -792,15 +794,16 @@ Alpine.data("ChallengeMap", () => ({
             // override these settings. Useful for fallback styling.
             // ================================================================
             defaultPlot: {
-              size: 20,                 // CUSTOMIZE: Default icon size
+              size: 12,                 // CUSTOMIZE: Default dot size (radius)
               attrs: {
-                fill: "#fff773",         // CUSTOMIZE: Default icon fill (Fallout yellow)
+                fill: "#fff773",         // CUSTOMIZE: Default dot fill (Fallout yellow)
                 stroke: "#8b5c29",       // CUSTOMIZE: Default border (Fallout brown)
                 "stroke-width": 2        // CUSTOMIZE: Default border thickness
               },
               attrsHover: {
                 opacity: 1.0,            // CUSTOMIZE: Hover opacity
-                transform: "s1.2"        // CUSTOMIZE: Hover scale (s1.2 = 120%)
+                fill: "#ffff99",         // CUSTOMIZE: Hover color (lighter yellow)
+                "stroke-width": 3        // CUSTOMIZE: Thicker border on hover (no transform to avoid jumping)
               },
               eventHandlers: {
                 // CUSTOMIZE: Behavior when clicking an icon
