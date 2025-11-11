@@ -395,151 +395,216 @@ Alpine.data("ChallengeMap", () => ({
   // ========================================================================
   // MAP CHALLENGES TO PROVINCES
   // ========================================================================
-  // This function assigns challenges to provinces based on categories.
-  // It also creates the icon/plot configurations for each challenge.
+  // This function assigns each challenge to a province based on its category.
+  // Each challenge gets its own clickable icon placed in the province that
+  // matches its category name (e.g., "WEB" category → "WEB" province).
   //
   // CUSTOMIZATION AREAS:
-  // 1. Category-to-province mapping logic (lines ~374-431)
-  // 2. Icon appearance and styling (lines ~403-426)
-  // 3. Icon positioning offsets for multiple challenges (lines ~397-398)
-  // 4. Tooltip content (line ~421-422)
+  // 1. Category-to-province mapping logic (category name → province code)
+  // 2. Icon appearance and styling (lines ~476-516)
+  // 3. Icon positioning offsets for multiple challenges in same province
+  // 4. Tooltip content (line ~510-512)
   // ========================================================================
   mapChallengesToProvinces() {
     const province_keys = Object.keys(this.provinces);
-    const chals_used = [];
+    
+    // Track which categories we've seen and their province assignments
+    const categoryToProvince = {};
+    const challengesByProvince = {};
 
-    // Group challenges by category
-    // CUSTOMIZE: Change how challenges are grouped (e.g., by tags, difficulty, etc.)
-    const challengesByCategory = {};
-    this.challenges.forEach(chal => {
+    // ====================================================================
+    // MAP EACH CHALLENGE TO A PROVINCE BASED ON CATEGORY
+    // ====================================================================
+    // Each challenge is assigned to a province that matches its category.
+    // If a province code matches the category (e.g., "WEB" category → "WEB" province),
+    // use that. Otherwise, assign categories to provinces in order.
+    // ====================================================================
+    this.challenges.forEach((chal, chalIndex) => {
+      // Track unique categories
       if (!this.categories.includes(chal.category)) {
         this.categories.push(chal.category);
       }
-      if (!challengesByCategory[chal.category]) {
-        challengesByCategory[chal.category] = [];
-      }
-      challengesByCategory[chal.category].push(chal);
-    });
 
-    // ====================================================================
-    // CATEGORY-TO-PROVINCE MAPPING - CUSTOMIZE ASSIGNMENT LOGIC HERE
-    // ====================================================================
-    // Currently: Each category is assigned to a province in order.
-    // To customize:
-    // - Change the assignment algorithm (e.g., round-robin, by category name, etc.)
-    // - Add custom mapping logic based on category names
-    // - Use challenge tags to override category mapping
-    // ====================================================================
-    this.categories.forEach((category, index) => {
-      const province = province_keys[index % province_keys.length];
+      // Determine which province this challenge belongs to
+      let province = null;
       
-      if (!this.provinces_used.includes(province)) {
-        // Get all challenges in this category
-        const categoryChallenges = challengesByCategory[category];
-        if (categoryChallenges && categoryChallenges.length > 0) {
-          // Store all challenge IDs for this province
-          this.province_challenges[province] = categoryChallenges.map(chal => chal.id);
-          
-          // Configure province area styling (hover effects, colors)
-          this.chal_areas[province] = {
-            value: category,
-            tooltip: {content: `<span style="font-weight:bold;">${category}</span><br/>${categoryChallenges.length} challenge${categoryChallenges.length > 1 ? 's' : ''}`}
-          };
+      // First, try to match category name to a province code
+      // Convert category to uppercase and check if it matches a province code
+      const categoryUpper = chal.category.toUpperCase().replace(/[^A-Z]/g, '');
+      if (this.provinces.hasOwnProperty(categoryUpper) && categoryUpper.length <= 3) {
+        // Category matches a province code (e.g., "WEB" → "WEB")
+        province = categoryUpper;
+      } else {
+        // Category doesn't match a province code, assign in order
+        const categoryIndex = this.categories.indexOf(chal.category);
+        province = province_keys[categoryIndex % province_keys.length];
+      }
+
+      // Initialize province tracking if needed
+      if (!categoryToProvince[chal.category]) {
+        categoryToProvince[chal.category] = province;
+        if (!this.provinces_used.includes(province)) {
           this.provinces_used.push(province);
-          // Store the first challenge ID for backward compatibility
-          this.provinces[province] = categoryChallenges[0].id;
-          
-          // ============================================================
-          // CREATE CHALLENGE ICONS/PLOTS - CUSTOMIZE ICON APPEARANCE
-          // ============================================================
-          // This loop creates a Fallout-themed icon for each challenge.
-          // Each icon is positioned at the province center with offsets
-          // for multiple challenges.
-          // ============================================================
-          const center = this.province_centers[province];
-          if (center) {
-            categoryChallenges.forEach((chal, chalIndex) => {
-              // ========================================================
-              // ICON POSITIONING OFFSETS - CUSTOMIZE SPACING
-              // ========================================================
-              // When multiple challenges are in one province, offset them
-              // to avoid overlap. Adjust these multipliers to change spacing:
-              // - offsetX: Horizontal spacing (30 = pixels between icons)
-              // - offsetY: Vertical spacing (20 = pixels between rows)
-              // ========================================================
-              const offsetX = categoryChallenges.length > 1 ? (chalIndex - (categoryChallenges.length - 1) / 2) * 30 : 0;
-              const offsetY = categoryChallenges.length > 1 ? (chalIndex % 2) * 20 : 0;
-              
-              const plotId = `chal_${chal.id}`;
-              const isSolved = chal.solved_by_me || false;
-              
-              // ========================================================
-              // ICON CONFIGURATION - CUSTOMIZE APPEARANCE HERE
-              // ========================================================
-              // This object defines how each challenge icon appears.
-              // Key customization points:
-              // - x, y: Icon position (center + offsets)
-              // - size: Base size (20 = radius for circles, not used for SVG)
-              // - width, height: Icon dimensions in pixels
-              // - path: SVG path data (see getFalloutIconPath())
-              // - attrs.fill: Icon color (#fff773 = yellow, #0066b1 = blue)
-              // - attrs.stroke: Border color (#8b5c29 = brown)
-              // - attrs["stroke-width"]: Border thickness
-              // - attrs.opacity: Icon transparency (0.0-1.0)
-              // - attrsHover: Effects when hovering (transform = scale)
-              // - tooltip.content: HTML shown on hover
-              // ========================================================
-              this.chal_plots[plotId] = {
-                x: center.x + offsetX,              // X position on map
-                y: center.y + offsetY,             // Y position on map
-                size: 20,                          // Base size (for circles)
-                type: "svg",                       // Icon type: "svg", "circle", "square", or "image"
-                width: 24,                         // Icon width in pixels
-                height: 24,                        // Icon height in pixels
-                path: this.getFalloutIconPath(),   // SVG path data (see getFalloutIconPath())
-                attrs: {
-                  fill: isSolved ? "#0066b1" : "#fff773",  // CUSTOMIZE: Icon fill color (solved vs unsolved)
-                  stroke: "#8b5c29",                       // CUSTOMIZE: Border color (Fallout brown)
-                  "stroke-width": 2,                       // CUSTOMIZE: Border thickness
-                  opacity: isSolved ? 0.8 : 1.0            // CUSTOMIZE: Transparency (solved icons slightly faded)
-                },
-                attrsHover: {
-                  opacity: 1.0,                           // CUSTOMIZE: Hover opacity
-                  transform: "s1.2"                        // CUSTOMIZE: Hover scale (s1.2 = 120% size)
-                },
-                tooltip: {
-                  // CUSTOMIZE: Tooltip HTML content shown on hover
-                  content: `<span style="font-weight:bold;">${chal.name}</span><br/>${parseInt(chal.value)} points<br/>${chal.category}${isSolved ? '<br/><span style="color:#0066b1;">✓ Solved</span>' : ''}`
-                },
-                challengeId: chal.id,                      // Challenge ID for click handler
-                isSolved: isSolved                         // Whether challenge is solved
-              };
-            });
-          }
         }
+        if (!challengesByProvince[province]) {
+          challengesByProvince[province] = [];
+        }
+        // Configure province area styling
+        this.chal_areas[province] = {
+          value: chal.category,
+          tooltip: {content: `<span style="font-weight:bold;">${chal.category}</span>`}
+        };
+        // Store first challenge ID for backward compatibility
+        this.provinces[province] = chal.id;
+      }
+
+      // Add challenge to province
+      if (!challengesByProvince[province]) {
+        challengesByProvince[province] = [];
+      }
+      challengesByProvince[province].push(chal);
+      
+      // Store all challenge IDs for this province
+      if (!this.province_challenges[province]) {
+        this.province_challenges[province] = [];
+      }
+      if (!this.province_challenges[province].includes(chal.id)) {
+        this.province_challenges[province].push(chal.id);
+      }
+
+      // ============================================================
+      // CREATE INDIVIDUAL CHALLENGE ICON - ONE PER CHALLENGE
+      // ============================================================
+      // Each challenge gets its own clickable icon positioned within
+      // its category's province. Multiple challenges in the same province
+      // are offset to avoid overlap.
+      // ============================================================
+      const center = this.province_centers[province];
+      if (center) {
+        // Calculate position for this specific challenge
+        const challengesInProvince = challengesByProvince[province];
+        const challengeIndexInProvince = challengesInProvince.indexOf(chal);
+        const totalInProvince = challengesInProvince.length;
+        
+        // ========================================================
+        // ICON POSITIONING OFFSETS - CUSTOMIZE SPACING
+        // ========================================================
+        // When multiple challenges are in one province, offset them
+        // to avoid overlap. Adjust these multipliers to change spacing:
+        // - offsetX: Horizontal spacing (30 = pixels between icons)
+        // - offsetY: Vertical spacing (20 = pixels between rows)
+        // - Layout: Arrange in a grid or line pattern
+        // ========================================================
+        // Arrange icons in a grid pattern
+        const cols = Math.ceil(Math.sqrt(totalInProvince));
+        const row = Math.floor(challengeIndexInProvince / cols);
+        const col = challengeIndexInProvince % cols;
+        const offsetX = (col - (cols - 1) / 2) * 35; // Horizontal spacing
+        const offsetY = (row - Math.floor((totalInProvince - 1) / cols) / 2) * 35; // Vertical spacing
+        
+        const plotId = `chal_${chal.id}`;
+        const isSolved = chal.solved_by_me || false;
+        
+        // ========================================================
+        // ICON CONFIGURATION - CUSTOMIZE APPEARANCE HERE
+        // ========================================================
+        // This object defines how each challenge icon appears.
+        // Key customization points:
+        // - x, y: Icon position (center + offsets)
+        // - size: Base size (20 = radius for circles, not used for SVG)
+        // - width, height: Icon dimensions in pixels
+        // - path: SVG path data (see getFalloutIconPath())
+        // - attrs.fill: Icon color (#fff773 = yellow, #0066b1 = blue)
+        // - attrs.stroke: Border color (#8b5c29 = brown)
+        // - attrs["stroke-width"]: Border thickness
+        // - attrs.opacity: Icon transparency (0.0-1.0)
+        // - attrsHover: Effects when hovering (transform = scale)
+        // - tooltip.content: HTML shown on hover
+        // ========================================================
+        this.chal_plots[plotId] = {
+          x: center.x + offsetX,              // X position on map
+          y: center.y + offsetY,             // Y position on map
+          size: 20,                          // Base size (for circles)
+          type: "svg",                       // Icon type: "svg", "circle", "square", or "image"
+          width: 24,                         // Icon width in pixels
+          height: 24,                        // Icon height in pixels
+          path: this.getFalloutIconPath(),   // SVG path data (see getFalloutIconPath())
+          attrs: {
+            fill: isSolved ? "#0066b1" : "#fff773",  // CUSTOMIZE: Icon fill color (solved vs unsolved)
+            stroke: "#8b5c29",                       // CUSTOMIZE: Border color (Fallout brown)
+            "stroke-width": 2,                       // CUSTOMIZE: Border thickness
+            opacity: isSolved ? 0.8 : 1.0            // CUSTOMIZE: Transparency (solved icons slightly faded)
+          },
+          attrsHover: {
+            opacity: 1.0,                           // CUSTOMIZE: Hover opacity
+            transform: "s1.2"                        // CUSTOMIZE: Hover scale (s1.2 = 120% size)
+          },
+          tooltip: {
+            // CUSTOMIZE: Tooltip HTML content shown on hover
+            content: `<span style="font-weight:bold;">${chal.name}</span><br/>${parseInt(chal.value)} points<br/>${chal.category}${isSolved ? '<br/><span style="color:#0066b1;">✓ Solved</span>' : ''}`
+          },
+          challengeId: chal.id,                      // Challenge ID for click handler
+          isSolved: isSolved                         // Whether challenge is solved
+        };
       }
     });
 
-    // Also check for province tags on individual challenges (override category mapping)
+    // ====================================================================
+    // PROVINCE TAG OVERRIDE - Tags can override category mapping
+    // ====================================================================
+    // If a challenge has a province tag (e.g., tag "BC"), it will be placed
+    // in that province instead of its category's province.
+    // ====================================================================
     this.challenges.forEach((chal) => {
       chal.tags.forEach(tag => {
         const provinceCode = tag.value.toUpperCase();
-        if (this.provinces.hasOwnProperty(provinceCode) && !this.provinces_used.includes(provinceCode)) {
-          // Initialize array if it doesn't exist
+        if (this.provinces.hasOwnProperty(provinceCode)) {
+          // Tag overrides category - move challenge to tagged province
+          // Remove from original province
+          const originalProvince = categoryToProvince[chal.category];
+          if (originalProvince && this.province_challenges[originalProvince]) {
+            const index = this.province_challenges[originalProvince].indexOf(chal.id);
+            if (index > -1) {
+              this.province_challenges[originalProvince].splice(index, 1);
+            }
+          }
+          
+          // Add to tagged province
           if (!this.province_challenges[provinceCode]) {
             this.province_challenges[provinceCode] = [];
           }
-          // Add this challenge to the province
           if (!this.province_challenges[provinceCode].includes(chal.id)) {
             this.province_challenges[provinceCode].push(chal.id);
           }
           
-          this.chal_areas[provinceCode] = {
-            value: chal.category,
-            tooltip: {content: `<span style="font-weight:bold;">${chal.category} ${parseInt(chal.value)}: ${chal.name}</span>`}
-          };
-          this.provinces_used.push(provinceCode);
-          this.provinces[provinceCode] = chal.id;
+          // Update icon position if it exists
+          const plotId = `chal_${chal.id}`;
+          if (this.chal_plots[plotId] && this.province_centers[provinceCode]) {
+            const center = this.province_centers[provinceCode];
+            const challengesInProvince = this.province_challenges[provinceCode];
+            const challengeIndex = challengesInProvince.indexOf(chal.id);
+            const totalInProvince = challengesInProvince.length;
+            
+            // Recalculate position in new province
+            const cols = Math.ceil(Math.sqrt(totalInProvince));
+            const row = Math.floor(challengeIndex / cols);
+            const col = challengeIndex % cols;
+            const offsetX = (col - (cols - 1) / 2) * 35;
+            const offsetY = (row - Math.floor((totalInProvince - 1) / cols) / 2) * 35;
+            
+            this.chal_plots[plotId].x = center.x + offsetX;
+            this.chal_plots[plotId].y = center.y + offsetY;
+          }
+          
+          // Update province area if not already set
+          if (!this.provinces_used.includes(provinceCode)) {
+            this.chal_areas[provinceCode] = {
+              value: chal.category,
+              tooltip: {content: `<span style="font-weight:bold;">${chal.category} ${parseInt(chal.value)}: ${chal.name}</span>`}
+            };
+            this.provinces_used.push(provinceCode);
+            this.provinces[provinceCode] = chal.id;
+          }
         }
       });
     });
@@ -698,7 +763,9 @@ Alpine.data("ChallengeMap", () => ({
               },
               eventHandlers: {
                 // CUSTOMIZE: Behavior when clicking a province
-                // Currently: Opens challenge(s) or shows selection modal
+                // Note: With individual icons, province clicks are less common.
+                // Users typically click the icons directly. This handler is kept
+                // for backward compatibility and for provinces with many challenges.
                 click: (e, id, mapElem, textElem) => {
                   if (!self.provinces_used.includes(id)) {
                     console.log('Province', id, 'has no challenges assigned');
