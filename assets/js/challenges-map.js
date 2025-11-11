@@ -26,7 +26,7 @@ function loadMapLibraries() {
       attempts++;
       const $ = getJQuery();
       
-      if (window.Raphael && $ && $.mapael && $.mapael.maps && $.mapael.maps.canada_provinces) {
+      if (window.Raphael && $ && $.mapael && $.mapael.maps && $.mapael.maps.islands) {
         clearInterval(checkInterval);
         resolve();
       } else if (attempts >= maxAttempts) {
@@ -650,34 +650,8 @@ Alpine.data("ChallengeMap", () => ({
     return "#" + color.substring(0, 6);
   },
 
-  // ========================================================================
-  // GET FALLOUT ICON PATH
-  // ========================================================================
-  // Returns the SVG path data for the Fallout radiation symbol icon.
-  // This is the icon that appears on the map for each challenge.
-  //
-  // CUSTOMIZE ICON DESIGN:
-  // - Replace this path with a different SVG path for a custom icon
-  // - Use SVG path tools (like Inkscape, Illustrator) to create new paths
-  // - Path format: "M x,y L x,y ..." (Move, Line, Arc, etc.)
-  // - Coordinates are relative to a 24x24 viewBox (0-24 range)
-  //
-  // Examples:
-  // - Vault door: Create a circular door with gear teeth
-  // - Pip-Boy: Create a wristwatch-like icon
-  // - Nuka-Cola bottle: Create a bottle shape
-  // - Custom symbol: Any SVG path you design
-  // ========================================================================
-  getFalloutIconPath() {
-    // Radiation symbol - three blades with circle in center
-    // This creates the classic Fallout radiation warning symbol
-    // Path breakdown:
-    // - M = Move to point
-    // - L = Line to point
-    // - A = Arc (for the circle)
-    // - Z = Close path
-    return "M 12,2 L 12,6 M 12,18 L 12,22 M 2,12 L 6,12 M 18,12 L 22,12 M 4.343,4.343 L 7.071,7.071 M 16.929,16.929 L 19.657,19.657 M 4.343,19.657 L 7.071,16.929 M 16.929,7.071 L 19.657,4.343 M 12,8 A 4,4 0 0,1 12,16 A 4,4 0 0,1 12,8 Z";
-  },
+  // Note: Using simple circles for dots instead of SVG paths to avoid hover jumping issues
+  // If you want to customize the dot appearance, change the 'type' and 'size' in chal_plots configuration
 
   createMap() {
     // Wait for DOM to be ready and container to be visible
