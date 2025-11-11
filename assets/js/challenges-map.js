@@ -276,19 +276,37 @@ Alpine.data("Challenge", () => ({
   },
 }));
 
-// Canada Map functionality
+// ============================================================================
+// CANADA MAP CHALLENGE DISPLAY FUNCTIONALITY
+// ============================================================================
+// This Alpine.js component handles the interactive Canada map that displays
+// challenges as Fallout-themed icons. Each challenge category is mapped to a
+// province/territory, and individual challenges appear as clickable icons.
+//
+// CUSTOMIZATION AREAS:
+// - Province mapping logic (mapChallengesToProvinces)
+// - Icon appearance (getFalloutIconPath, chal_plots configuration)
+// - Colors (colorHash, attrs.fill/stroke in chal_plots)
+// - Icon positioning (province_centers, offset calculations)
+// - Map styling (createMap -> mapConfig)
+// - Checkmark appearance (addCheckmarksToSolvedChallenges)
+// ============================================================================
+
 Alpine.data("ChallengeMap", () => ({
-  loaded: false,
-  challenges: [],
-  challenge: null,
-  provinces: {},
-  provinces_used: [],
-  chal_areas: {},
-  categories: [],
-  category_colors: [],
-  province_challenges: {}, // Store all challenges per province
-  chal_plots: {}, // Store challenge plots/icons on map
-  province_centers: {}, // Store center coordinates for each province
+  // ========================================================================
+  // DATA PROPERTIES - Customize these to change behavior
+  // ========================================================================
+  loaded: false,                    // Whether map libraries have loaded
+  challenges: [],                   // Array of all challenges from CTFd API
+  challenge: null,                  // Currently selected challenge
+  provinces: {},                    // Province code -> challenge ID mapping (legacy)
+  provinces_used: [],                // List of provinces that have challenges assigned
+  chal_areas: {},                   // Mapael area configuration (province styling)
+  categories: [],                   // Unique challenge categories found
+  category_colors: [],              // Color legend for categories
+  province_challenges: {},           // Province code -> array of challenge IDs
+  chal_plots: {},                   // Challenge icon/plot configurations for Mapael
+  province_centers: {},             // X/Y coordinates for icon placement per province
 
   async init() {
     try {
@@ -317,8 +335,18 @@ Alpine.data("ChallengeMap", () => ({
     }
   },
 
+  // ========================================================================
+  // INITIALIZE MAP
+  // ========================================================================
+  // Sets up province mappings and center coordinates, then maps challenges
+  // to provinces and creates the map visualization.
+  //
+  // CUSTOMIZATION: Adjust province_centers coordinates to reposition icons
+  // ========================================================================
   initializeMap() {
     // Initialize provinces mapping (Canada: 10 provinces + 3 territories)
+    // This is used for category-to-province assignment
+    // CUSTOMIZE: Add/remove provinces or change the order
     this.provinces = {
       'AB':1, 'BC':2, 'MB':3, 'NB':4,
       'NL':5, 'NS':6, 'ON':7, 'PE':8,
@@ -326,7 +354,17 @@ Alpine.data("ChallengeMap", () => ({
       'YT':13
     };
 
-    // Province center coordinates (approximate centers for icon placement)
+    // ====================================================================
+    // PROVINCE CENTER COORDINATES - CUSTOMIZE ICON POSITIONS HERE
+    // ====================================================================
+    // These X/Y coordinates determine where challenge icons appear on the map.
+    // Coordinates are in the map's SVG coordinate system (0-1000 width, 0-800 height).
+    // 
+    // To adjust icon positions:
+    // - Increase X to move right, decrease to move left
+    // - Increase Y to move down, decrease to move up
+    // - Adjust these values to center icons better within each province
+    // ====================================================================
     this.province_centers = {
       'BC': { x: 200, y: 350 },   // British Columbia
       'AB': { x: 235, y: 340 },   // Alberta
@@ -354,11 +392,24 @@ Alpine.data("ChallengeMap", () => ({
     this.createMap();
   },
 
+  // ========================================================================
+  // MAP CHALLENGES TO PROVINCES
+  // ========================================================================
+  // This function assigns challenges to provinces based on categories.
+  // It also creates the icon/plot configurations for each challenge.
+  //
+  // CUSTOMIZATION AREAS:
+  // 1. Category-to-province mapping logic (lines ~374-431)
+  // 2. Icon appearance and styling (lines ~403-426)
+  // 3. Icon positioning offsets for multiple challenges (lines ~397-398)
+  // 4. Tooltip content (line ~421-422)
+  // ========================================================================
   mapChallengesToProvinces() {
     const province_keys = Object.keys(this.provinces);
     const chals_used = [];
 
     // Group challenges by category
+    // CUSTOMIZE: Change how challenges are grouped (e.g., by tags, difficulty, etc.)
     const challengesByCategory = {};
     this.challenges.forEach(chal => {
       if (!this.categories.includes(chal.category)) {
@@ -370,7 +421,15 @@ Alpine.data("ChallengeMap", () => ({
       challengesByCategory[chal.category].push(chal);
     });
 
-    // Map each category to a province
+    // ====================================================================
+    // CATEGORY-TO-PROVINCE MAPPING - CUSTOMIZE ASSIGNMENT LOGIC HERE
+    // ====================================================================
+    // Currently: Each category is assigned to a province in order.
+    // To customize:
+    // - Change the assignment algorithm (e.g., round-robin, by category name, etc.)
+    // - Add custom mapping logic based on category names
+    // - Use challenge tags to override category mapping
+    // ====================================================================
     this.categories.forEach((category, index) => {
       const province = province_keys[index % province_keys.length];
       
@@ -381,6 +440,7 @@ Alpine.data("ChallengeMap", () => ({
           // Store all challenge IDs for this province
           this.province_challenges[province] = categoryChallenges.map(chal => chal.id);
           
+          // Configure province area styling (hover effects, colors)
           this.chal_areas[province] = {
             value: category,
             tooltip: {content: `<span style="font-weight:bold;">${category}</span><br/>${categoryChallenges.length} challenge${categoryChallenges.length > 1 ? 's' : ''}`}
@@ -389,40 +449,70 @@ Alpine.data("ChallengeMap", () => ({
           // Store the first challenge ID for backward compatibility
           this.provinces[province] = categoryChallenges[0].id;
           
-          // Create plots (icons) for each challenge in this province
+          // ============================================================
+          // CREATE CHALLENGE ICONS/PLOTS - CUSTOMIZE ICON APPEARANCE
+          // ============================================================
+          // This loop creates a Fallout-themed icon for each challenge.
+          // Each icon is positioned at the province center with offsets
+          // for multiple challenges.
+          // ============================================================
           const center = this.province_centers[province];
           if (center) {
             categoryChallenges.forEach((chal, chalIndex) => {
-              // Offset multiple challenges slightly
+              // ========================================================
+              // ICON POSITIONING OFFSETS - CUSTOMIZE SPACING
+              // ========================================================
+              // When multiple challenges are in one province, offset them
+              // to avoid overlap. Adjust these multipliers to change spacing:
+              // - offsetX: Horizontal spacing (30 = pixels between icons)
+              // - offsetY: Vertical spacing (20 = pixels between rows)
+              // ========================================================
               const offsetX = categoryChallenges.length > 1 ? (chalIndex - (categoryChallenges.length - 1) / 2) * 30 : 0;
               const offsetY = categoryChallenges.length > 1 ? (chalIndex % 2) * 20 : 0;
               
               const plotId = `chal_${chal.id}`;
               const isSolved = chal.solved_by_me || false;
               
+              // ========================================================
+              // ICON CONFIGURATION - CUSTOMIZE APPEARANCE HERE
+              // ========================================================
+              // This object defines how each challenge icon appears.
+              // Key customization points:
+              // - x, y: Icon position (center + offsets)
+              // - size: Base size (20 = radius for circles, not used for SVG)
+              // - width, height: Icon dimensions in pixels
+              // - path: SVG path data (see getFalloutIconPath())
+              // - attrs.fill: Icon color (#fff773 = yellow, #0066b1 = blue)
+              // - attrs.stroke: Border color (#8b5c29 = brown)
+              // - attrs["stroke-width"]: Border thickness
+              // - attrs.opacity: Icon transparency (0.0-1.0)
+              // - attrsHover: Effects when hovering (transform = scale)
+              // - tooltip.content: HTML shown on hover
+              // ========================================================
               this.chal_plots[plotId] = {
-                x: center.x + offsetX,
-                y: center.y + offsetY,
-                size: 20,
-                type: "svg",
-                width: 24,
-                height: 24,
-                path: this.getFalloutIconPath(),
+                x: center.x + offsetX,              // X position on map
+                y: center.y + offsetY,             // Y position on map
+                size: 20,                          // Base size (for circles)
+                type: "svg",                       // Icon type: "svg", "circle", "square", or "image"
+                width: 24,                         // Icon width in pixels
+                height: 24,                        // Icon height in pixels
+                path: this.getFalloutIconPath(),   // SVG path data (see getFalloutIconPath())
                 attrs: {
-                  fill: isSolved ? "#0066b1" : "#fff773", // Light blue if solved, yellow if not
-                  stroke: "#8b5c29", // Brown border
-                  "stroke-width": 2,
-                  opacity: isSolved ? 0.8 : 1.0
+                  fill: isSolved ? "#0066b1" : "#fff773",  // CUSTOMIZE: Icon fill color (solved vs unsolved)
+                  stroke: "#8b5c29",                       // CUSTOMIZE: Border color (Fallout brown)
+                  "stroke-width": 2,                       // CUSTOMIZE: Border thickness
+                  opacity: isSolved ? 0.8 : 1.0            // CUSTOMIZE: Transparency (solved icons slightly faded)
                 },
                 attrsHover: {
-                  opacity: 1.0,
-                  transform: "s1.2"
+                  opacity: 1.0,                           // CUSTOMIZE: Hover opacity
+                  transform: "s1.2"                        // CUSTOMIZE: Hover scale (s1.2 = 120% size)
                 },
                 tooltip: {
+                  // CUSTOMIZE: Tooltip HTML content shown on hover
                   content: `<span style="font-weight:bold;">${chal.name}</span><br/>${parseInt(chal.value)} points<br/>${chal.category}${isSolved ? '<br/><span style="color:#0066b1;">✓ Solved</span>' : ''}`
                 },
-                challengeId: chal.id,
-                isSolved: isSolved
+                challengeId: chal.id,                      // Challenge ID for click handler
+                isSolved: isSolved                         // Whether challenge is solved
               };
             });
           }
@@ -471,6 +561,12 @@ Alpine.data("ChallengeMap", () => ({
     }
   },
 
+  // ========================================================================
+  // COLOR HASH FUNCTION
+  // ========================================================================
+  // Generates a consistent color from a string (used for category colors).
+  // CUSTOMIZE: Change the hash algorithm or use a predefined color palette
+  // ========================================================================
   colorHash(str) {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -487,9 +583,32 @@ Alpine.data("ChallengeMap", () => ({
     return "#" + color.substring(0, 6);
   },
 
-  // Fallout-themed radiation symbol icon (SVG path)
+  // ========================================================================
+  // GET FALLOUT ICON PATH
+  // ========================================================================
+  // Returns the SVG path data for the Fallout radiation symbol icon.
+  // This is the icon that appears on the map for each challenge.
+  //
+  // CUSTOMIZE ICON DESIGN:
+  // - Replace this path with a different SVG path for a custom icon
+  // - Use SVG path tools (like Inkscape, Illustrator) to create new paths
+  // - Path format: "M x,y L x,y ..." (Move, Line, Arc, etc.)
+  // - Coordinates are relative to a 24x24 viewBox (0-24 range)
+  //
+  // Examples:
+  // - Vault door: Create a circular door with gear teeth
+  // - Pip-Boy: Create a wristwatch-like icon
+  // - Nuka-Cola bottle: Create a bottle shape
+  // - Custom symbol: Any SVG path you design
+  // ========================================================================
   getFalloutIconPath() {
     // Radiation symbol - three blades with circle in center
+    // This creates the classic Fallout radiation warning symbol
+    // Path breakdown:
+    // - M = Move to point
+    // - L = Line to point
+    // - A = Arc (for the circle)
+    // - Z = Close path
     return "M 12,2 L 12,6 M 12,18 L 12,22 M 2,12 L 6,12 M 18,12 L 22,12 M 4.343,4.343 L 7.071,7.071 M 16.929,16.929 L 19.657,19.657 M 4.343,19.657 L 7.071,16.929 M 16.929,7.071 L 19.657,4.343 M 12,8 A 4,4 0 0,1 12,16 A 4,4 0 0,1 12,8 Z";
   },
 
@@ -542,26 +661,44 @@ Alpine.data("ChallengeMap", () => ({
       }
       
       try {
+        // ====================================================================
+        // MAP CONFIGURATION - CUSTOMIZE MAP APPEARANCE AND BEHAVIOR
+        // ====================================================================
+        // This object configures the jQuery Mapael map. Key sections:
+        // - map.defaultArea: Province styling and click handlers
+        // - map.defaultPlot: Default icon styling (overridden by chal_plots)
+        // - legend: Category color legend
+        // - areas: Province area configurations
+        // - plots: Challenge icon configurations
+        // ====================================================================
         const mapConfig = {
           map: {
-            name: "canada_provinces",
-            cssClass: "map",
+            name: "canada_provinces",  // Map definition name (from canada_provinces.js)
+            cssClass: "map",            // CSS class for map container
+            // ================================================================
+            // DEFAULT AREA CONFIGURATION - CUSTOMIZE PROVINCE STYLING
+            // ================================================================
+            // Controls how provinces appear and behave when clicked/hovered
+            // ================================================================
             defaultArea: {
               attrs: {
-                fill: "#001423", // Fallout dark blue
-                stroke: "#8b5c29", // Fallout brown
-                strokeWidth: 1,
-                cursor: "pointer"
+                fill: "#001423",        // CUSTOMIZE: Province fill color (Fallout dark blue)
+                stroke: "#8b5c29",      // CUSTOMIZE: Province border color (Fallout brown)
+                strokeWidth: 1,         // CUSTOMIZE: Border thickness
+                cursor: "pointer"       // Cursor style on hover
               },
               text: {
+                // CUSTOMIZE: Province label text styling
                 attrs: {"font-size": 10, "font-family": "Arial, Helvetica, sans-serif"},
                 attrsHover: {"font-size": 14, "font-family": "Arial, Helvetica, sans-serif"}
               },
               attrsHover: {
-                animDuration: 200,
-                fill: "#001a2e", // Slightly lighter dark blue
+                animDuration: 200,      // CUSTOMIZE: Hover animation duration (ms)
+                fill: "#001a2e",        // CUSTOMIZE: Province color on hover (lighter dark blue)
               },
               eventHandlers: {
+                // CUSTOMIZE: Behavior when clicking a province
+                // Currently: Opens challenge(s) or shows selection modal
                 click: (e, id, mapElem, textElem) => {
                   if (!self.provinces_used.includes(id)) {
                     console.log('Province', id, 'has no challenges assigned');
@@ -581,18 +718,26 @@ Alpine.data("ChallengeMap", () => ({
                 }
               }
             },
+            // ================================================================
+            // DEFAULT PLOT CONFIGURATION - CUSTOMIZE DEFAULT ICON STYLING
+            // ================================================================
+            // These are defaults for icons. Individual icons in chal_plots
+            // override these settings. Useful for fallback styling.
+            // ================================================================
             defaultPlot: {
-              size: 20,
+              size: 20,                 // CUSTOMIZE: Default icon size
               attrs: {
-                fill: "#fff773", // Fallout yellow
-                stroke: "#8b5c29", // Fallout brown
-                "stroke-width": 2
+                fill: "#fff773",         // CUSTOMIZE: Default icon fill (Fallout yellow)
+                stroke: "#8b5c29",       // CUSTOMIZE: Default border (Fallout brown)
+                "stroke-width": 2        // CUSTOMIZE: Default border thickness
               },
               attrsHover: {
-                opacity: 1.0,
-                transform: "s1.2"
+                opacity: 1.0,            // CUSTOMIZE: Hover opacity
+                transform: "s1.2"        // CUSTOMIZE: Hover scale (s1.2 = 120%)
               },
               eventHandlers: {
+                // CUSTOMIZE: Behavior when clicking an icon
+                // Currently: Opens the associated challenge
                 click: function(e, id, mapElem, textElem) {
                   const plot = self.chal_plots[id];
                   if (plot && plot.challengeId) {
@@ -602,14 +747,19 @@ Alpine.data("ChallengeMap", () => ({
               }
             }
           },
+          // ================================================================
+          // LEGEND CONFIGURATION - CUSTOMIZE CATEGORY COLOR LEGEND
+          // ================================================================
+          // Controls the legend showing challenge categories and their colors
+          // ================================================================
           legend: {
             area: {
-              title: "Categories",
-              slices: self.category_colors
+              title: "Categories",       // CUSTOMIZE: Legend title
+              slices: self.category_colors // Color slices (generated in mapChallengesToProvinces)
             }
           },
-          areas: self.chal_areas,
-          plots: self.chal_plots,
+          areas: self.chal_areas,         // Province area configurations
+          plots: self.chal_plots,         // Challenge icon configurations
         };
         
         console.log('Creating map with config:', mapConfig);
@@ -646,13 +796,34 @@ Alpine.data("ChallengeMap", () => ({
     this.initializeMap();
   },
 
+  // ========================================================================
+  // SHOW CHALLENGE SELECTION MODAL
+  // ========================================================================
+  // Displays a modal when a province has multiple challenges.
+  // Allows user to select which challenge to open.
+  //
+  // CUSTOMIZE MODAL APPEARANCE:
+  // - Modify modalHtml template to change layout/styling
+  // - Add challenge descriptions, difficulty indicators, etc.
+  // - Change button styling or add icons
+  // ========================================================================
   async showChallengeSelection(provinceCode, challengeIds) {
     // Get challenge details for all challenges in this province
     const challenges = this.challenges.filter(chal => challengeIds.includes(chal.id));
     
     if (challenges.length === 0) return;
     
-    // Create a simple selection modal
+    // ====================================================================
+    // MODAL HTML TEMPLATE - CUSTOMIZE MODAL LAYOUT
+    // ====================================================================
+    // This template creates the challenge selection modal.
+    // Customize:
+    // - Add challenge descriptions: ${chal.description}
+    // - Add difficulty indicators: ${chal.difficulty}
+    // - Add solved status indicators
+    // - Change button styling or add icons
+    // - Modify the list-group-item structure
+    // ====================================================================
     const modalHtml = `
       <div class="modal-dialog">
         <div class="modal-content">
@@ -739,26 +910,52 @@ Alpine.data("ChallengeMap", () => ({
     selectionModal.show();
   },
 
+  // ========================================================================
+  // ADD CHECKMARKS TO SOLVED CHALLENGES
+  // ========================================================================
+  // Draws checkmark overlays on solved challenge icons.
+  // This is called after the map is rendered.
+  //
+  // CUSTOMIZE CHECKMARK APPEARANCE:
+  // - Change the SVG path to modify checkmark shape
+  // - Adjust stroke color, width, and style
+  // - Modify position offsets (plot.x - 10, etc.)
+  // - Add fill color for a filled checkmark
+  // - Change to a different symbol (X, star, etc.)
+  // ========================================================================
   addCheckmarksToSolvedChallenges($mapContainer) {
     // Add checkmark overlays for solved challenges
     const self = this;
     Object.keys(this.chal_plots).forEach(plotId => {
       const plot = this.chal_plots[plotId];
       if (plot && plot.isSolved) {
-        // Get the mapael instance
+        // Get the mapael instance (contains Raphael paper for drawing)
         const mapaelInstance = $mapContainer.data('mapael');
         if (mapaelInstance && mapaelInstance.paper) {
           const paper = mapaelInstance.paper;
-          // Draw checkmark at plot position (larger, more visible)
+          // ================================================================
+          // CHECKMARK PATH - CUSTOMIZE SHAPE AND POSITION
+          // ================================================================
+          // Current: Simple checkmark path
+          // Path format: "M x,y L x,y L x,y" (Move, Line, Line)
+          // - plot.x - 10, plot.y: Start of checkmark (left side)
+          // - plot.x - 2, plot.y + 8: Middle point (bottom of check)
+          // - plot.x + 10, plot.y - 8: End point (top right)
+          //
+          // To customize:
+          // - Adjust offsets (-10, +8, etc.) to change position/size
+          // - Change path to create different shapes (X, star, circle, etc.)
+          // - Example X mark: "M x-8,y-8 L x+8,y+8 M x+8,y-8 L x-8,y+8"
+          // ================================================================
           const checkmark = paper.path(`M ${plot.x - 10},${plot.y} L ${plot.x - 2},${plot.y + 8} L ${plot.x + 10},${plot.y - 8}`)
             .attr({
-              stroke: "#0066b1", // Fallout light blue
-              "stroke-width": 4,
-              "stroke-linecap": "round",
-              "stroke-linejoin": "round",
-              "fill": "none"
+              stroke: "#0066b1",         // CUSTOMIZE: Checkmark color (Fallout light blue)
+              "stroke-width": 4,          // CUSTOMIZE: Checkmark thickness
+              "stroke-linecap": "round",  // CUSTOMIZE: Line end style ("round", "square", "butt")
+              "stroke-linejoin": "round", // CUSTOMIZE: Line join style ("round", "miter", "bevel")
+              "fill": "none"              // CUSTOMIZE: Fill color (use "none" or a color like "#0066b1")
             });
-          // Store checkmark reference
+          // Store checkmark reference for potential cleanup/updates
           plot.checkmark = checkmark;
         }
       }
