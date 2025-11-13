@@ -1089,6 +1089,7 @@ Alpine.data("ChallengeMap", () => ({
   },
 
   async loadChallenge(challengeId) {
+    const self = this;
     await CTFd.pages.challenge.displayChallenge(challengeId, challenge => {
       challenge.data.view = addTargetBlank(challenge.data.view);
       Alpine.store("challenge").data = challenge.data;
