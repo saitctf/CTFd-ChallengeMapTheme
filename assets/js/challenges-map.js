@@ -13,7 +13,7 @@ function loadMapLibraries() {
     
     // Check if already loaded
     const $ = getJQuery();
-    if (window.Raphael && $ && $.mapael && $.mapael.maps && $.mapael.maps.islands) {
+    if (window.Raphael && $ && $.mapael && $.mapael.maps && $.mapael.maps.france) {
       resolve();
       return;
     }
@@ -26,7 +26,7 @@ function loadMapLibraries() {
       attempts++;
       const $ = getJQuery();
       
-      if (window.Raphael && $ && $.mapael && $.mapael.maps && $.mapael.maps.islands) {
+      if (window.Raphael && $ && $.mapael && $.mapael.maps && $.mapael.maps.france) {
         clearInterval(checkInterval);
         resolve();
       } else if (attempts >= maxAttempts) {
@@ -345,44 +345,126 @@ Alpine.data("ChallengeMap", () => ({
   // ========================================================================
   initializeMap() {
     // ====================================================================
-    // ISLANDS MAPPING - Each island represents a category
+    // FRANCE MAP MAPPING - Each department represents a category
     // ====================================================================
-    // Islands are numbered ISLAND1 through ISLAND13.
-    // Each category will be assigned to an island in order.
-    // CUSTOMIZE: Add/remove islands or change the order
+    // Departments are dynamically loaded from the France map.
+    // Each category will be assigned to a department in order.
     // ====================================================================
-    this.provinces = {
-      'ISLAND1':1, 'ISLAND2':2, 'ISLAND3':3, 'ISLAND4':4,
-      'ISLAND5':5, 'ISLAND6':6, 'ISLAND7':7, 'ISLAND8':8,
-      'ISLAND9':9, 'ISLAND10':10, 'ISLAND11':11, 'ISLAND12':12,
-      'ISLAND13':13
-    };
+    // Get available departments from the map
+    const $ = window.$ || window.jQuery;
+    const availableDepartments = $ && $.mapael && $.mapael.maps && $.mapael.maps.france && $.mapael.maps.france.elems 
+      ? Object.keys($.mapael.maps.france.elems) 
+      : [];
+    
+    // Build provinces object dynamically
+    this.provinces = {};
+    availableDepartments.forEach((dept, index) => {
+      this.provinces[dept] = index + 1;
+    });
 
     // ====================================================================
-    // ISLAND CENTER COORDINATES - CUSTOMIZE DOT POSITIONS HERE
+    // DEPARTMENT CENTER COORDINATES - Calculated from SVG paths
     // ====================================================================
-    // These X/Y coordinates determine where challenge dots appear on each island.
+    // These X/Y coordinates determine where challenge dots appear on each department.
     // Coordinates are in the map's SVG coordinate system (0-1000 width, 0-800 height).
-    // 
-    // To adjust dot positions:
-    // - Increase X to move right, decrease to move left
-    // - Increase Y to move down, decrease to move up
-    // - Adjust these values to center dots better within each island
     // ====================================================================
     this.province_centers = {
-      'ISLAND1': { x: 190, y: 200 },   // Top left island
-      'ISLAND2': { x: 450, y: 180 },   // Top center island
-      'ISLAND3': { x: 740, y: 200 },   // Top right island
-      'ISLAND4': { x: 245, y: 400 },   // Middle left island
-      'ISLAND5': { x: 505, y: 380 },   // Middle center island
-      'ISLAND6': { x: 765, y: 400 },   // Middle right island
-      'ISLAND7': { x: 225, y: 600 },   // Bottom left island
-      'ISLAND8': { x: 530, y: 580 },   // Bottom center island
-      'ISLAND9': { x: 795, y: 600 },   // Bottom right island
-      'ISLAND10': { x: 115, y: 450 },  // Far left island
-      'ISLAND11': { x: 885, y: 450 },  // Far right island
-      'ISLAND12': { x: 80, y: 250 },   // Top far left island
-      'ISLAND13': { x: 920, y: 250 }  // Top far right island
+      "department_29": { x: 20.9, y: 97.6 },
+      "department_22": { x: 57.1, y: 91.4 },
+      "department_56": { x: 59.5, y: 119.0 },
+      "department_35": { x: 102.9, y: 96.7 },
+      "department_44": { x: 118.0, y: 134.1 },
+      "department_50": { x: 101.0, y: 55.1 },
+      "department_53": { x: 167.5, y: 104.2 },
+      "department_49": { x: 127.0, y: 134.0 },
+      "department_85": { x: 125.8, y: 166.5 },
+      "department_79": { x: 166.8, y: 165.3 },
+      "department_17": { x: 125.5, y: 196.7 },
+      "department_33": { x: 133.5, y: 226.4 },
+      "department_40": { x: 132.2, y: 273.7 },
+      "department_64": { x: 169.3, y: 314.4 },
+      "department_65": { x: 174.6, y: 313.7 },
+      "department_32": { x: 198.7, y: 295.0 },
+      "department_47": { x: 184.8, y: 265.4 },
+      "department_31": { x: 234.5, y: 300.3 },
+      "department_09": { x: 228.0, y: 327.1 },
+      "department_11": { x: 261.9, y: 319.9 },
+      "department_34": { x: 318.5, y: 297.4 },
+      "department_81": { x: 258.4, y: 288.8 },
+      "department_82": { x: 219.3, y: 281.4 },
+      "department_12": { x: 278.9, y: 255.8 },
+      "department_46": { x: 235.5, y: 253.1 },
+      "department_24": { x: 199.4, y: 225.7 },
+      "department_16": { x: 203.3, y: 206.5 },
+      "department_86": { x: 175.1, y: 161.0 },
+      "department_37": { x: 199.3, y: 138.6 },
+      "department_72": { x: 187.0, y: 106.8 },
+      "department_61": { x: 189.9, y: 87.2 },
+      "department_27": { x: 195.0, y: 65.4 },
+      "department_14": { x: 183.0, y: 67.7 },
+      "department_76": { x: 226.8, y: 39.4 },
+      "department_60": { x: 242.4, y: 53.9 },
+      "department_80": { x: 236.1, y: 29.0 },
+      "department_95": { x: 244.2, y: 78.5 },
+      "department_78": { x: 238.7, y: 84.0 },
+      "department_28": { x: 232.5, y: 87.6 },
+      "department_75": { x: 269.2, y: 91.9 },
+      "department_93": { x: 277.2, y: 88.5 },
+      "department_94": { x: 273.7, y: 94.7 },
+      "department_92": { x: 265.4, y: 91.0 },
+      "department_91": { x: 263.4, y: 97.2 },
+      "department_45": { x: 258.2, y: 112.3 },
+      "department_41": { x: 212.7, y: 122.3 },
+      "department_36": { x: 237.6, y: 157.8 },
+      "department_18": { x: 261.5, y: 141.1 },
+      "department_23": { x: 243.6, y: 193.4 },
+      "department_87": { x: 230.7, y: 198.0 },
+      "department_19": { x: 255.8, y: 223.0 },
+      "department_15": { x: 272.9, y: 234.3 },
+      "department_30": { x: 326.6, y: 276.6 },
+      "department_48": { x: 306.4, y: 256.8 },
+      "department_63": { x: 284.9, y: 201.0 },
+      "department_42": { x: 325.4, y: 201.6 },
+      "department_69": { x: 356.2, y: 199.5 },
+      "department_43": { x: 309.9, y: 236.8 },
+      "department_07": { x: 358.5, y: 237.5 },
+      "department_26": { x: 366.0, y: 238.4 },
+      "department_84": { x: 362.9, y: 279.7 },
+      "department_13": { x: 352.2, y: 299.5 },
+      "department_83": { x: 424.8, y: 306.3 },
+      "department_06": { x: 439.2, y: 281.7 },
+      "department_04": { x: 438.4, y: 268.8 },
+      "department_05": { x: 417.3, y: 251.6 },
+      "department_38": { x: 379.9, y: 216.1 },
+      "department_73": { x: 401.6, y: 216.9 },
+      "department_74": { x: 429.0, y: 194.3 },
+      "department_71": { x: 336.0, y: 161.7 },
+      "department_03": { x: 289.5, y: 177.0 },
+      "department_58": { x: 295.4, y: 145.7 },
+      "department_89": { x: 304.3, y: 110.3 },
+      "department_77": { x: 294.3, y: 81.4 },
+      "department_10": { x: 339.5, y: 98.5 },
+      "department_51": { x: 330.0, y: 68.0 },
+      "department_02": { x: 315.8, y: 40.9 },
+      "department_59": { x: 270.1, y: 28.8 },
+      "department_62": { x: 248.6, y: 0.5 },
+      "department_08": { x: 359.0, y: 35.8 },
+      "department_55": { x: 383.0, y: 58.7 },
+      "department_54": { x: 394.0, y: 61.6 },
+      "department_57": { x: 409.6, y: 63.7 },
+      "department_67": { x: 445.4, y: 81.7 },
+      "department_88": { x: 445.3, y: 105.5 },
+      "department_52": { x: 364.9, y: 99.5 },
+      "department_70": { x: 409.2, y: 126.9 },
+      "department_21": { x: 348.9, y: 125.9 },
+      "department_25": { x: 429.4, y: 144.8 },
+      "department_2B": { x: 485.7, y: 324.3 },
+      "department_2A": { x: 454.5, y: 352.9 },
+      "department_66": { x: 282.4, y: 342.7 },
+      "department_01": { x: 363.8, y: 188.7 },
+      "department_39": { x: 387.6, y: 157.7 },
+      "department_68": { x: 452.5, y: 115.0 },
+      "department_90": { x: 440.3, y: 138.2 }
     };
 
     this.provinces_used = [];
@@ -432,8 +514,8 @@ Alpine.data("ChallengeMap", () => ({
       // Determine which province this challenge belongs to
       let province = null;
       
-      // Assign category to an island in order
-      // Each category gets its own island
+      // Assign category to a department in order
+      // Each category gets its own department
       const categoryIndex = this.categories.indexOf(chal.category);
       province = province_keys[categoryIndex % province_keys.length];
 
@@ -492,8 +574,8 @@ Alpine.data("ChallengeMap", () => ({
         // - offsetY: Vertical spacing (20 = pixels between rows)
         // - Layout: Arrange in a grid or line pattern
         // ========================================================
-        // Arrange dots in a grid pattern within the island
-        // Use tighter spacing for better containment within islands
+        // Arrange dots in a grid pattern within the department
+        // Use tighter spacing for better containment within departments
         const cols = Math.ceil(Math.sqrt(totalInProvince));
         const row = Math.floor(challengeIndexInProvince / cols);
         const col = challengeIndexInProvince % cols;
@@ -695,8 +777,8 @@ Alpine.data("ChallengeMap", () => ({
         return;
       }
       
-      if (!$.mapael.maps || !$.mapael.maps.islands) {
-        console.error('Islands map definition not found');
+      if (!$.mapael.maps || !$.mapael.maps.france) {
+        console.error('France map definition not found');
         console.log('Available maps:', $.mapael.maps ? Object.keys($.mapael.maps) : 'none');
         return;
       }
@@ -714,7 +796,7 @@ Alpine.data("ChallengeMap", () => ({
         // ====================================================================
         const mapConfig = {
           map: {
-            name: "islands",            // Map definition name (from islands_map.js)
+            name: "france",            // Map definition name (from islands_map.js - now contains France map)
             cssClass: "map",            // CSS class for map container
             // ================================================================
             // DEFAULT AREA CONFIGURATION - CUSTOMIZE PROVINCE STYLING
@@ -723,19 +805,19 @@ Alpine.data("ChallengeMap", () => ({
             // ================================================================
             defaultArea: {
               attrs: {
-                fill: "#8b5c29",        // CUSTOMIZE: Island fill color (Fallout brown)
-                stroke: "#ffe1ba",      // CUSTOMIZE: Island border color (Fallout tan)
+                fill: "#8b5c29",        // CUSTOMIZE: Department fill color (Fallout brown)
+                stroke: "#ffe1ba",      // CUSTOMIZE: Department border color (Fallout tan)
                 strokeWidth: 2,         // CUSTOMIZE: Border thickness (thicker for visibility)
                 cursor: "pointer"       // Cursor style on hover
               },
               text: {
-                // CUSTOMIZE: Island label text styling
+                // CUSTOMIZE: Department label text styling
                 attrs: {"font-size": 12, "font-family": "Arial, Helvetica, sans-serif", "fill": "#fff773"},
                 attrsHover: {"font-size": 14, "font-family": "Arial, Helvetica, sans-serif", "fill": "#fff773"}
               },
               attrsHover: {
                 animDuration: 200,      // CUSTOMIZE: Hover animation duration (ms)
-                fill: "#a66d3a",        // CUSTOMIZE: Island color on hover (lighter brown)
+                fill: "#a66d3a",        // CUSTOMIZE: Department color on hover (lighter brown)
               },
               eventHandlers: {
                 // CUSTOMIZE: Behavior when clicking a province
