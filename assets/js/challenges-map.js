@@ -352,13 +352,16 @@ Alpine.data("ChallengeMap", () => ({
     // ====================================================================
     // Get available departments from the map
     const $ = window.$ || window.jQuery;
-    const availableDepartments = $ && $.mapael && $.mapael.maps && $.mapael.maps.france && $.mapael.maps.france.elems 
+    const allDepartments = $ && $.mapael && $.mapael.maps && $.mapael.maps.france && $.mapael.maps.france.elems 
       ? Object.keys($.mapael.maps.france.elems) 
       : [];
     
-    // Build provinces object dynamically
+    // Exclude department_2B from normal rotation (reserved for "Intro" category)
+    const availableDepartments = allDepartments.filter(dept => dept !== 'department_2B');
+    
+    // Build provinces object dynamically (include all departments, but 2B is reserved)
     this.provinces = {};
-    availableDepartments.forEach((dept, index) => {
+    allDepartments.forEach((dept, index) => {
       this.provinces[dept] = index + 1;
     });
 
@@ -369,102 +372,102 @@ Alpine.data("ChallengeMap", () => ({
     // Coordinates are in the map's SVG coordinate system (0-1000 width, 0-800 height).
     // ====================================================================
     this.province_centers = {
-      "department_29": { x: 20.9, y: 97.6 },
-      "department_22": { x: 57.1, y: 91.4 },
-      "department_56": { x: 59.5, y: 119.0 },
-      "department_35": { x: 102.9, y: 96.7 },
-      "department_44": { x: 118.0, y: 134.1 },
-      "department_50": { x: 101.0, y: 55.1 },
-      "department_53": { x: 167.5, y: 104.2 },
-      "department_49": { x: 127.0, y: 134.0 },
-      "department_85": { x: 125.8, y: 166.5 },
-      "department_79": { x: 166.8, y: 165.3 },
-      "department_17": { x: 125.5, y: 196.7 },
-      "department_33": { x: 133.5, y: 226.4 },
-      "department_40": { x: 132.2, y: 273.7 },
-      "department_64": { x: 169.3, y: 314.4 },
-      "department_65": { x: 174.6, y: 313.7 },
-      "department_32": { x: 198.7, y: 295.0 },
-      "department_47": { x: 184.8, y: 265.4 },
-      "department_31": { x: 234.5, y: 300.3 },
-      "department_09": { x: 228.0, y: 327.1 },
-      "department_11": { x: 261.9, y: 319.9 },
-      "department_34": { x: 318.5, y: 297.4 },
-      "department_81": { x: 258.4, y: 288.8 },
-      "department_82": { x: 219.3, y: 281.4 },
-      "department_12": { x: 278.9, y: 255.8 },
-      "department_46": { x: 235.5, y: 253.1 },
-      "department_24": { x: 199.4, y: 225.7 },
-      "department_16": { x: 203.3, y: 206.5 },
-      "department_86": { x: 175.1, y: 161.0 },
-      "department_37": { x: 199.3, y: 138.6 },
-      "department_72": { x: 187.0, y: 106.8 },
-      "department_61": { x: 189.9, y: 87.2 },
-      "department_27": { x: 195.0, y: 65.4 },
-      "department_14": { x: 183.0, y: 67.7 },
-      "department_76": { x: 226.8, y: 39.4 },
-      "department_60": { x: 242.4, y: 53.9 },
-      "department_80": { x: 236.1, y: 29.0 },
-      "department_95": { x: 244.2, y: 78.5 },
-      "department_78": { x: 238.7, y: 84.0 },
-      "department_28": { x: 232.5, y: 87.6 },
-      "department_75": { x: 269.2, y: 91.9 },
-      "department_93": { x: 277.2, y: 88.5 },
-      "department_94": { x: 273.7, y: 94.7 },
-      "department_92": { x: 265.4, y: 91.0 },
-      "department_91": { x: 263.4, y: 97.2 },
-      "department_45": { x: 258.2, y: 112.3 },
-      "department_41": { x: 212.7, y: 122.3 },
-      "department_36": { x: 237.6, y: 157.8 },
-      "department_18": { x: 261.5, y: 141.1 },
-      "department_23": { x: 243.6, y: 193.4 },
-      "department_87": { x: 230.7, y: 198.0 },
-      "department_19": { x: 255.8, y: 223.0 },
-      "department_15": { x: 272.9, y: 234.3 },
-      "department_30": { x: 326.6, y: 276.6 },
-      "department_48": { x: 306.4, y: 256.8 },
-      "department_63": { x: 284.9, y: 201.0 },
-      "department_42": { x: 325.4, y: 201.6 },
-      "department_69": { x: 356.2, y: 199.5 },
-      "department_43": { x: 309.9, y: 236.8 },
-      "department_07": { x: 358.5, y: 237.5 },
-      "department_26": { x: 366.0, y: 238.4 },
-      "department_84": { x: 362.9, y: 279.7 },
-      "department_13": { x: 352.2, y: 299.5 },
-      "department_83": { x: 424.8, y: 306.3 },
-      "department_06": { x: 439.2, y: 281.7 },
-      "department_04": { x: 438.4, y: 268.8 },
-      "department_05": { x: 417.3, y: 251.6 },
-      "department_38": { x: 379.9, y: 216.1 },
-      "department_73": { x: 401.6, y: 216.9 },
-      "department_74": { x: 429.0, y: 194.3 },
-      "department_71": { x: 336.0, y: 161.7 },
-      "department_03": { x: 289.5, y: 177.0 },
-      "department_58": { x: 295.4, y: 145.7 },
-      "department_89": { x: 304.3, y: 110.3 },
-      "department_77": { x: 294.3, y: 81.4 },
-      "department_10": { x: 339.5, y: 98.5 },
-      "department_51": { x: 330.0, y: 68.0 },
-      "department_02": { x: 315.8, y: 40.9 },
-      "department_59": { x: 270.1, y: 28.8 },
-      "department_62": { x: 248.6, y: 0.5 },
-      "department_08": { x: 359.0, y: 35.8 },
-      "department_55": { x: 383.0, y: 58.7 },
-      "department_54": { x: 394.0, y: 61.6 },
-      "department_57": { x: 409.6, y: 63.7 },
-      "department_67": { x: 445.4, y: 81.7 },
-      "department_88": { x: 445.3, y: 105.5 },
-      "department_52": { x: 364.9, y: 99.5 },
-      "department_70": { x: 409.2, y: 126.9 },
-      "department_21": { x: 348.9, y: 125.9 },
-      "department_25": { x: 429.4, y: 144.8 },
-      "department_2B": { x: 485.7, y: 324.3 },
-      "department_2A": { x: 454.5, y: 352.9 },
-      "department_66": { x: 282.4, y: 342.7 },
-      "department_01": { x: 363.8, y: 188.7 },
-      "department_39": { x: 387.6, y: 157.7 },
-      "department_68": { x: 452.5, y: 115.0 },
-      "department_90": { x: 440.3, y: 138.2 }
+      "department_29": { x: 31.0, y: 108.8 },
+      "department_22": { x: 55.2, y: 102.7 },
+      "department_56": { x: 56.8, y: 130.3 },
+      "department_35": { x: 85.7, y: 107.9 },
+      "department_44": { x: 95.8, y: 145.4 },
+      "department_50": { x: 84.4, y: 66.3 },
+      "department_53": { x: 128.8, y: 115.4 },
+      "department_49": { x: 101.8, y: 145.2 },
+      "department_85": { x: 101.0, y: 177.7 },
+      "department_79": { x: 128.3, y: 176.5 },
+      "department_17": { x: 100.8, y: 207.9 },
+      "department_33": { x: 106.1, y: 237.7 },
+      "department_40": { x: 105.2, y: 284.9 },
+      "department_64": { x: 130.0, y: 325.6 },
+      "department_65": { x: 133.5, y: 324.9 },
+      "department_32": { x: 149.6, y: 306.2 },
+      "department_47": { x: 140.3, y: 276.7 },
+      "department_31": { x: 173.4, y: 311.5 },
+      "department_09": { x: 169.1, y: 338.3 },
+      "department_11": { x: 191.7, y: 331.1 },
+      "department_34": { x: 229.5, y: 308.6 },
+      "department_81": { x: 189.3, y: 300.0 },
+      "department_82": { x: 163.3, y: 292.6 },
+      "department_12": { x: 203.1, y: 267.1 },
+      "department_46": { x: 174.1, y: 264.3 },
+      "department_24": { x: 150.1, y: 236.9 },
+      "department_16": { x: 152.7, y: 217.7 },
+      "department_86": { x: 133.9, y: 172.2 },
+      "department_37": { x: 150.0, y: 149.8 },
+      "department_72": { x: 141.8, y: 118.0 },
+      "department_61": { x: 143.7, y: 98.5 },
+      "department_27": { x: 147.1, y: 76.6 },
+      "department_14": { x: 139.1, y: 79.0 },
+      "department_76": { x: 168.3, y: 50.6 },
+      "department_60": { x: 178.7, y: 65.1 },
+      "department_80": { x: 174.5, y: 40.2 },
+      "department_95": { x: 179.9, y: 89.7 },
+      "department_78": { x: 176.3, y: 95.2 },
+      "department_28": { x: 172.1, y: 98.8 },
+      "department_75": { x: 196.6, y: 103.2 },
+      "department_93": { x: 201.9, y: 99.7 },
+      "department_94": { x: 199.6, y: 105.9 },
+      "department_92": { x: 194.1, y: 102.2 },
+      "department_91": { x: 192.7, y: 108.4 },
+      "department_45": { x: 189.2, y: 123.5 },
+      "department_41": { x: 158.9, y: 133.6 },
+      "department_36": { x: 175.5, y: 169.0 },
+      "department_18": { x: 191.5, y: 152.3 },
+      "department_23": { x: 179.5, y: 204.7 },
+      "department_87": { x: 170.9, y: 209.2 },
+      "department_19": { x: 187.7, y: 234.3 },
+      "department_15": { x: 199.0, y: 245.5 },
+      "department_30": { x: 234.9, y: 287.8 },
+      "department_48": { x: 218.7, y: 268.0 },
+      "department_63": { x: 207.0, y: 212.3 },
+      "department_42": { x: 234.1, y: 212.9 },
+      "department_69": { x: 254.6, y: 210.7 },
+      "department_43": { x: 223.7, y: 248.0 },
+      "department_07": { x: 256.1, y: 248.7 },
+      "department_26": { x: 261.1, y: 249.6 },
+      "department_84": { x: 259.0, y: 290.9 },
+      "department_13": { x: 251.9, y: 310.8 },
+      "department_83": { x: 300.3, y: 317.6 },
+      "department_06": { x: 309.9, y: 293.0 },
+      "department_04": { x: 309.4, y: 280.1 },
+      "department_05": { x: 295.3, y: 262.9 },
+      "department_38": { x: 270.3, y: 227.4 },
+      "department_73": { x: 284.8, y: 228.1 },
+      "department_74": { x: 303.1, y: 205.6 },
+      "department_71": { x: 241.1, y: 172.9 },
+      "department_03": { x: 210.1, y: 188.3 },
+      "department_58": { x: 214.1, y: 157.0 },
+      "department_89": { x: 220.0, y: 121.6 },
+      "department_77": { x: 213.3, y: 92.6 },
+      "department_10": { x: 243.4, y: 109.7 },
+      "department_51": { x: 237.1, y: 79.3 },
+      "department_02": { x: 227.7, y: 52.1 },
+      "department_59": { x: 197.2, y: 28.8 },
+      "department_62": { x: 182.9, y: 11.4 },
+      "department_08": { x: 256.5, y: 47.0 },
+      "department_55": { x: 272.4, y: 70.0 },
+      "department_54": { x: 279.8, y: 72.8 },
+      "department_57": { x: 290.2, y: 74.9 },
+      "department_67": { x: 314.0, y: 92.9 },
+      "department_88": { x: 314.0, y: 116.7 },
+      "department_52": { x: 260.4, y: 110.8 },
+      "department_70": { x: 289.9, y: 138.1 },
+      "department_21": { x: 249.7, y: 137.1 },
+      "department_25": { x: 303.4, y: 156.1 },
+      "department_2B": { x: 439.2, y: 151.5 },
+      "department_2A": { x: 417.8, y: 178.1 },
+      "department_66": { x: 205.4, y: 354.0 },
+      "department_01": { x: 259.7, y: 200.0 },
+      "department_39": { x: 275.5, y: 168.9 },
+      "department_68": { x: 318.8, y: 126.2 },
+      "department_90": { x: 310.6, y: 149.4 }
     };
 
     this.provinces_used = [];
@@ -514,10 +517,15 @@ Alpine.data("ChallengeMap", () => ({
       // Determine which province this challenge belongs to
       let province = null;
       
-      // Assign category to a department in order
-      // Each category gets its own department
-      const categoryIndex = this.categories.indexOf(chal.category);
-      province = province_keys[categoryIndex % province_keys.length];
+      // Special handling: "Intro" category goes to department_2B (small island on the right)
+      if (chal.category === "Intro" && this.provinces.hasOwnProperty('department_2B')) {
+        province = 'department_2B';
+      } else {
+        // Assign category to a department in order
+        // Each category gets its own department
+        const categoryIndex = this.categories.indexOf(chal.category);
+        province = province_keys[categoryIndex % province_keys.length];
+      }
 
       // Initialize province tracking if needed
       if (!categoryToProvince[chal.category]) {
